@@ -1,9 +1,14 @@
 package com.yegnachat.server;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import java.util.Scanner;
+
 public class Main {
     public static void main(String[] args) {
-        System.out.println("hi");
+        int port;
+        System.out.println("Enter the port for server: ");
+        Scanner input = new Scanner(System.in);
+        port = input.nextInt();
+        ChatServer server = new ChatServer(port);
+        server.startServer();
     }
 }
