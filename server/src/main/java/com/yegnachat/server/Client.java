@@ -41,11 +41,11 @@ public class Client {
     }
 
     public void listenForMessages() {
-        Thread listener = new Thread(() -> {
+        Thread listener = Thread.ofVirtual().unstarted(() -> {
             String msg;
             try {
                 while ((msg = reader.readLine()) != null) {
-                    // Send message to ChatController for UI update
+
                     chatController.addMessageToBox(msg);
                 }
             } catch (IOException e) {

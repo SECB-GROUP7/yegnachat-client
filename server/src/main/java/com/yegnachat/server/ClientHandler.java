@@ -3,7 +3,6 @@ package com.yegnachat.server;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
 
 public class ClientHandler implements Runnable {
 
@@ -12,7 +11,7 @@ public class ClientHandler implements Runnable {
     private BufferedWriter bufferedWriter;
     private String username;
 
-    private static final List<ClientHandler> clientHandlers = new ArrayList<>();
+    private static final ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
 
     public ClientHandler(Socket socket) throws IOException {
         this.socket = socket;

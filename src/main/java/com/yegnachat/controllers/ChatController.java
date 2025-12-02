@@ -9,6 +9,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 
+import java.util.EventListener;
+
 public class ChatController {
 
     @FXML
@@ -43,5 +45,6 @@ public class ChatController {
             chat_messageBox.getChildren().add(new Text(message));
             chat_scrollPane.vvalueProperty().bind(chat_messageBox.heightProperty());
         });
+
     }
 }
