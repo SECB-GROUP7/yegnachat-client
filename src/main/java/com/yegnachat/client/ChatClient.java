@@ -10,11 +10,12 @@ import java.io.IOException;
 public class ChatClient extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(ChatClient.class.getResource("login.fxml"));
-        Scene scene = new Scene(fxmlLoader.load());
-        stage.setTitle("Login");
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/login.fxml"));
+        Scene scene = new Scene(loader.load());
+        stage.setTitle("YegnaChat — Login");
         stage.setResizable(false);
         stage.setScene(scene);
         stage.show();
     }
+
 }

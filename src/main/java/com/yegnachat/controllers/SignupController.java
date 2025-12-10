@@ -14,7 +14,7 @@ import javafx.stage.Stage;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-public class LoginController {
+public class SignupController {
 
     @FXML
     private TextField usernameField;
@@ -33,7 +33,7 @@ public class LoginController {
         String dbPass = dotenv.get("DB_PASS");
 
         try {
-            Connection conn = DriverManager.getConnection(dbUrl,dbUser,dbPass);
+            Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
             userDao = new UserDao(conn);
 
         } catch (Exception e) {
@@ -42,24 +42,18 @@ public class LoginController {
     }
 
     @FXML
-    public void handleLogin() {
+    public void handleSignup() {
         try {
-            String username = usernameField.getText().toLowerCase();
-            String pass = passwordField.getText();
+            User u = new User();
+            u.setUsername(usernameField.getText().toLowerCase());
+            u.setPasswordHash(PasswordUtil.hashPassword(passwordField.getText()));
+            u.setAvatarUrl(null);
+            u.setBio("");
 
-            User user = userDao.getUserByUsername(username);
+            boolean success = userDao.createUser(u);
 
-            if (user == null) {
-                statusLabel.setText("User not found!");
-                return;
-            }
-
-            if (!PasswordUtil.checkPassword(pass, user.getPasswordHash())) {
-                statusLabel.setText("Invalid credentials!");
-                return;
-            }
-
-            statusLabel.setText("Login successful!");
+            if (success) statusLabel.setText("Account created!");
+            else statusLabel.setText("Signup failed!");
 
         } catch (Exception e) {
             statusLabel.setText("Error: " + e.getMessage());
@@ -67,16 +61,15 @@ public class LoginController {
     }
 
     @FXML
-    public void goToSignup() {
+    public void goToLogin() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/signup.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/login.fxml"));
             Scene scene = new Scene(loader.load());
             Stage stage = (Stage) usernameField.getScene().getWindow();
             stage.setScene(scene);
-            stage.setTitle("Signup");
+            stage.setTitle("Login");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
 }

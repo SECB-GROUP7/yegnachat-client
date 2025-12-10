@@ -1,37 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.text.Font?>
 
-<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.yegnachat.controllers.LoginController">
+<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.yegnachat.controllers.LoginController">
 
-    <children>
+    <VBox alignment="CENTER" maxWidth="350" spacing="15">
 
-        <VBox alignment="CENTER" maxWidth="350" spacing="15">
-            <padding>
-                <Insets bottom="30" left="20" right="20" top="30" />
-            </padding>
+        <padding>
+            <Insets bottom="30" left="20" right="20" top="30"/>
+        </padding>
 
-            <Label text="Yegna Chat Login">
-                <font>
-                    <Font size="24" />
-                </font>
-            </Label>
+        <Label text="Yegna Chat Login">
+            <font>
+                <Font size="24"/>
+            </font>
+        </Label>
 
-            <TextField fx:id="usernameField" prefWidth="250" promptText="Username" />
-
-            <TextField fx:id="hostField" prefWidth="250" promptText="Server Host (e.g. 127.0.0.1)" />
-
-            <TextField fx:id="portField" prefWidth="250" promptText="Port (e.g. 5000)" />
-
-            <Button fx:id="connectButton" onAction="#connect" prefWidth="250" text="Connect" />
-
-            <Label fx:id="statusLabel" textFill="red" />
-
+        <VBox spacing="5">
+            <Label text="Username:"/>
+            <TextField fx:id="usernameField" prefWidth="250"/>
         </VBox>
 
-    </children>
+        <VBox spacing="5">
+            <Label text="Password:"/>
+            <PasswordField fx:id="passwordField" prefWidth="250"/>
+        </VBox>
 
+        <Button fx:id="loginButton" onAction="#handleLogin" prefWidth="250" text="Login"/>
+
+        <Hyperlink text="Don't have an account? Sign up" onAction="#goToSignup">
+            <VBox.margin>
+                <Insets top="10.0"/>
+            </VBox.margin>
+        </Hyperlink>
+
+        <Label fx:id="statusLabel" textFill="red"/>
+
+    </VBox>
 </StackPane>

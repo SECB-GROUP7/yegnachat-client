@@ -10,6 +10,10 @@ module com.yegnachat.client {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires jbcrypt;
+    requires com.zaxxer.hikari;
+    requires java.sql;
+    requires java.dotenv;
 
     opens com.yegnachat.client to javafx.fxml;
     exports com.yegnachat.client;
