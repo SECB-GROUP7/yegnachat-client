@@ -42,7 +42,8 @@ public class UserDao {
                 rs.getString("username"),
                 rs.getString("password_hash"),
                 rs.getString("avatar_url"),
-                rs.getString("bio")
+                rs.getString("bio"),
+                rs.getTimestamp("created_at").toLocalDateTime()
         );
     }
 }

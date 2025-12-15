@@ -1,50 +1,76 @@
 package com.yegnachat.controllers;
 
-import com.yegnachat.server.Client;
+import com.yegnachat.models.User;
+import com.yegnachat.session.Session;
+import com.yegnachat.util.Navigator;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
-
-import java.util.EventListener;
 
 public class ChatController {
 
-    @FXML
-    private VBox chat_messageBox;
-    @FXML
-    private TextField chat_messageField;
-    @FXML
-    private Button chat_sendButton;
-    @FXML
-    private ScrollPane chat_scrollPane;
+    @FXML private ImageView avatarView;
+    @FXML private Label usernameLabel;
+    @FXML private VBox messagesBox;
+    @FXML private ScrollPane messagesScroll;
+    @FXML private TextField messageField;
+    @FXML private Button sendButton;
+    @FXML private Button logoutButton;
 
-    private Client client;
+    @FXML
+    public void initialize() {
+        User me = Session.getCurrentUser();
+        if (me != null) {
+            usernameLabel.setText(me.getUsername());
+            if (me.getAvatarUrl() != null && !me.getAvatarUrl().isEmpty()) {
+                try {
+                    Image img = new Image(me.getAvatarUrl(), true);
+                    avatarView.setImage(img);
+                } catch (Exception e) {
+                    // ignore and leave default
+                }
+            }
+        } else {
+            usernameLabel.setText("Unknown");
+        }
 
-    public void setClient(Client client) {
-        this.client = client;
-        setupSendButton();
-    }
+        // UI hooks
+        sendButton.setOnAction(e -> sendLocalMessage());
+        messageField.setOnAction(e -> sendLocalMessage());
 
-    private void setupSendButton() {
-        chat_sendButton.setOnAction(event -> {
-            String message = chat_messageField.getText();
-            if (!message.isEmpty()) {
-                client.sendMessage(message);
-                addMessageToBox("Me: " + message);
-                chat_messageField.clear();
+        logoutButton.setOnAction(e -> {
+            try {
+                Session.clear();
+                Navigator.switchTo((Node) logoutButton, "login.fxml", "Login");
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         });
     }
 
+    private void sendLocalMessage() {
+        String text = messageField.getText().trim();
+        if (text.isEmpty()) return;
+
+        // add message to UI immediately
+        addMessageToBox("Me: " + text);
+        messageField.clear();
+
+        // TODO: send to server (Phase 2)
+    }
+
     public void addMessageToBox(String message) {
         Platform.runLater(() -> {
-            chat_messageBox.getChildren().add(new Text(message));
-            chat_scrollPane.vvalueProperty().bind(chat_messageBox.heightProperty());
+            Label l = new Label(message);
+            l.setWrapText(true);
+            messagesBox.getChildren().add(l);
+            // scroll to bottom
+            messagesScroll.layout();
+            messagesScroll.setVvalue(1.0);
         });
-
     }
 }

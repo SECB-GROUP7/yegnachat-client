@@ -3,38 +3,26 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
 
-<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.yegnachat.controllers.SignupController">
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.yegnachat.controllers.SignupController">
 
-    <children>
-        <VBox alignment="CENTER" maxWidth="350" spacing="15">
-
+    <center>
+        <VBox spacing="12" maxWidth="380">
             <padding>
-                <Insets bottom="30" left="20" right="20" top="30"/>
+                <Insets top="40" right="40" bottom="40" left="40"/>
             </padding>
 
-            <Label text="Create  Account">
-                <font>
-                    <Font size="24"/>
-                </font>
-            </Label>
+            <Label text="Create Account" style="-fx-font-size: 26px; -fx-font-weight: bold;" />
 
-            <TextField fx:id="usernameField" prefWidth="250" promptText="Username"/>
-            <PasswordField fx:id="passwordField" prefWidth="250" promptText="Password"/>
+            <TextField fx:id="usernameField" promptText="Username" />
+            <PasswordField fx:id="passwordField" promptText="Password" />
+            <PasswordField fx:id="confirmPasswordField" promptText="Confirm Password" />
 
-            <TextField fx:id="displayNameField" prefWidth="250" promptText="Display Name (Optional)"/>
-            <TextField fx:id="avatarUrlField" prefWidth="250" promptText="Avatar URL (Optional)"/>
+            <Button fx:id="signupButton" text="Sign Up" maxWidth="Infinity" />
 
-
-            <Button onAction="#handleSignup" prefWidth="250" text="Sign Up"/>
-
-            <Hyperlink text="Already have an account? Login" onAction="#goToLogin"/>
-
-
-            <Label fx:id="statusLabel" textFill="red"/>
-
+            <Hyperlink fx:id="goToLogin" text="Already have an account? Login" />
         </VBox>
-    </children>
-</StackPane>
+    </center>
+</BorderPane>

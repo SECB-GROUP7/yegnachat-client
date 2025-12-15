@@ -1,82 +1,123 @@
 package com.yegnachat.controllers;
 
+import com.yegnachat.client.ChatClient;
 import com.yegnachat.dao.UserDao;
 import com.yegnachat.models.User;
-
 import com.yegnachat.server.PasswordUtil;
+import com.yegnachat.session.Session;
+import com.yegnachat.util.Navigator;
 import io.github.cdimascio.dotenv.Dotenv;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.*;
 
 public class LoginController {
 
+    @FXML
+    private BorderPane rootPane;
     @FXML
     private TextField usernameField;
     @FXML
     private PasswordField passwordField;
     @FXML
-    private Label statusLabel;
+    private TextField passwordVisibleField;
+    @FXML
+    private CheckBox showPasswordCheck;
+    @FXML
+    private Button loginButton;
+    @FXML
+    private Hyperlink goToSignup;
 
-    private UserDao userDao;
+    private String DB_URL;
+    private String DB_USER;
+    private String DB_PASS;
 
     @FXML
     public void initialize() {
         Dotenv dotenv = Dotenv.load();
-        String dbUrl = "jdbc:mysql://" + dotenv.get("DB_HOST") + ":" + dotenv.get("DB_PORT") + "/" + dotenv.get("DB_NAME");
-        String dbUser = dotenv.get("DB_USER");
-        String dbPass = dotenv.get("DB_PASS");
 
-        try {
-            Connection conn = DriverManager.getConnection(dbUrl,dbUser,dbPass);
-            userDao = new UserDao(conn);
+        DB_URL = "jdbc:mysql://" + dotenv.get("DB_HOST") + ":" + dotenv.get("DB_PORT") + "/" + dotenv.get("DB_NAME");
+        DB_USER = dotenv.get("DB_USER");
+        DB_PASS = dotenv.get("DB_PASS");
 
-        } catch (Exception e) {
-            statusLabel.setText("DB error: " + e.getMessage());
-        }
+        // Show/hide password
+        showPasswordCheck.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                passwordVisibleField.setText(passwordField.getText());
+                passwordVisibleField.setVisible(true);
+                passwordVisibleField.setManaged(true);
+                passwordField.setVisible(false);
+                passwordField.setManaged(false);
+            } else {
+                passwordField.setText(passwordVisibleField.getText());
+                passwordField.setVisible(true);
+                passwordField.setManaged(true);
+                passwordVisibleField.setVisible(false);
+                passwordVisibleField.setManaged(false);
+            }
+        });
+
+        goToSignup.setOnAction(e -> switchTo("signup.fxml"));
+        loginButton.setOnAction(e -> login());
     }
 
-    @FXML
-    public void handleLogin() {
-        try {
-            String username = usernameField.getText().toLowerCase();
-            String pass = passwordField.getText();
+    private void login() {
+        String username = usernameField.getText();
+        String password = showPasswordCheck.isSelected()
+                ? passwordVisibleField.getText()
+                : passwordField.getText();
+
+        if (username.isBlank() || password.isBlank()) {
+            showAlert("Error", "All fields required");
+            return;
+        }
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
+            // TODO -> USE A DAMN UserDao GPT cmon
+            // TODO-> USE SESSION
+            UserDao userDao = new UserDao(conn);
 
             User user = userDao.getUserByUsername(username);
 
             if (user == null) {
-                statusLabel.setText("User not found!");
+                showAlert("Error", "Invalid username or password");
                 return;
             }
 
-            if (!PasswordUtil.checkPassword(pass, user.getPasswordHash())) {
-                statusLabel.setText("Invalid credentials!");
+
+            if (!PasswordUtil.checkPassword(password, user.getPasswordHash())) { // Replace with hashing ASAP
+                showAlert("Error", "Invalid username or password");
                 return;
             }
 
-            statusLabel.setText("Login successful!");
+            showAlert("Success", "Logged in!");
+            Session.setCurrentUser(user);
+            Navigator.switchTo(loginButton, "chat.fxml", "Chat");
 
-        } catch (Exception e) {
-            statusLabel.setText("Error: " + e.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            showAlert("Error", "Database error");
         }
     }
 
-    @FXML
-    public void goToSignup() {
+
+    private void switchTo(String fxml) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/signup.fxml"));
-            Scene scene = new Scene(loader.load());
-            Stage stage = (Stage) usernameField.getScene().getWindow();
-            stage.setScene(scene);
-            stage.setTitle("Signup");
+            Stage stage = (Stage) rootPane.getScene().getWindow();
+            stage.getScene().setRoot(FXMLLoader.load(ChatClient.class.getResource(fxml)));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private void showAlert(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setHeaderText(title);
+        alert.setContentText(msg);
+        alert.show();
+    }
 }
