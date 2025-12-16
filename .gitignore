@@ -22,7 +22,7 @@ target/
 .settings
 .springBeans
 .sts4-cache
-
+out/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
