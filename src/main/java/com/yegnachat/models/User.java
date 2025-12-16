@@ -21,7 +21,6 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    // getters / setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 

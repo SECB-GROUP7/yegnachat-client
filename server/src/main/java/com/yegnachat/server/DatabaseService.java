@@ -41,7 +41,6 @@ public class DatabaseService {
                 return;
             }
             String sql = new Scanner(in, StandardCharsets.UTF_8).useDelimiter("\\A").next();
-            // split by ; to execute each statement
             try (Connection conn = getConnection(); Statement st = conn.createStatement()) {
                 for (String stmt : sql.split(";")) {
                     String trimmed = stmt.trim();

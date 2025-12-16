@@ -1,68 +1,61 @@
 package com.yegnachat.server;
 
-import com.yegnachat.controllers.ChatController;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 import java.io.*;
 import java.net.Socket;
+import java.util.function.Consumer;
 
 public class Client {
-    private Socket socket;
-    private BufferedReader reader;
-    private BufferedWriter writer;
-    private String username;
-    private ChatController chatController;
 
-    public Client(String username, Socket socket, ChatController chatController) {
-        try {
-            this.socket = socket;
-            this.username = username;
-            this.chatController = chatController;
+    private final Socket socket;
+    private final BufferedReader reader;
+    private final BufferedWriter writer;
+    private final Gson gson = new Gson();
 
-            this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+    private Consumer<JsonObject> onMessage;
 
-            // send username first
-            writer.write(username);
-            writer.newLine();
-            writer.flush();
-
-        } catch (IOException e) {
-            closeEverything();
-        }
+    public Client(Socket socket) throws IOException {
+        this.socket = socket;
+        this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
     }
 
-    public void sendMessage(String message) {
+
+    public void send(JsonObject message) {
         try {
-            writer.write(message);
+            writer.write(gson.toJson(message));
             writer.newLine();
             writer.flush();
         } catch (IOException e) {
-            closeEverything();
+            close();
         }
     }
 
-    public void listenForMessages() {
-        Thread listener = Thread.ofVirtual().unstarted(() -> {
-            String msg;
+    public void startListening() {
+        Thread.ofVirtual().start(() -> {
             try {
-                while ((msg = reader.readLine()) != null) {
-
-                    chatController.addMessageToBox(msg);
+                String json;
+                while ((json = reader.readLine()) != null) {
+                    JsonObject msg = gson.fromJson(json, JsonObject.class);
+                    if (onMessage != null) {
+                        onMessage.accept(msg);
+                    }
                 }
             } catch (IOException e) {
-                closeEverything();
+                close();
             }
         });
-        listener.setDaemon(true);
-        listener.start();
     }
 
-    private void closeEverything() {
-        try {
-            if (reader != null) reader.close();
-            if (writer != null) writer.close();
-            if (socket != null) socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void setOnMessage(Consumer<JsonObject> handler) {
+        this.onMessage = handler;
+    }
+
+    private void close() {
+        try { reader.close(); } catch (Exception ignored) {}
+        try { writer.close(); } catch (Exception ignored) {}
+        try { socket.close(); } catch (Exception ignored) {}
     }
 }

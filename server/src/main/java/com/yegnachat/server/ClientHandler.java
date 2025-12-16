@@ -1,78 +1,95 @@
 package com.yegnachat.server;
 
+import com.yegnachat.server.auth.SessionInfo;
+
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientHandler implements Runnable {
 
-    private Socket socket;
-    private BufferedReader bufferedReader;
-    private BufferedWriter bufferedWriter;
-    private String username;
+    private final Socket socket;
+    private final BufferedReader reader;
+    private final BufferedWriter writer;
+    private final MessageRouter router;
 
-    private static final ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
+    private SessionInfo session;
 
-    public ClientHandler(Socket socket) throws IOException {
+    private static final Map<Integer, ClientHandler> ONLINE_USERS = new ConcurrentHashMap<>();
+
+    public ClientHandler(Socket socket, MessageRouter router) throws IOException {
         this.socket = socket;
-        this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-
-        // First message from client = username
-        this.username = bufferedReader.readLine();
-        broadcastMessage("Server: " + username + " has joined the chat");
+        this.router = router;
+        this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
     }
 
-    public static void addClientHandler(ClientHandler handler) {
-        synchronized (clientHandlers) {
-            clientHandlers.add(handler);
+    public void setSession(SessionInfo session) {
+        this.session = session;
+        if (session != null) {
+            ONLINE_USERS.put(session.getUserId(), this);
         }
+    }
+
+    public SessionInfo getSession() {
+        return session;
     }
 
     @Override
     public void run() {
-        String message;
-
         try {
-            while ((message = bufferedReader.readLine()) != null) {
-                broadcastMessage(username + ": " + message);
-            }
-        } catch (IOException e) {
-            closeEverything();
-        }
-    }
-
-    private void broadcastMessage(String message) {
-        synchronized (clientHandlers) {
-            for (ClientHandler clientHandler : clientHandlers) {
-                try {
-                    if (clientHandler != this) {
-                        clientHandler.bufferedWriter.write(message);
-                        clientHandler.bufferedWriter.newLine();
-                        clientHandler.bufferedWriter.flush();
-                    }
-                } catch (IOException e) {
-                    clientHandler.closeEverything();
+            String json;
+            while ((json = reader.readLine()) != null) {
+                String response = router.route(json, this);
+                if (response != null) {
+                    send(response);
                 }
             }
+        } catch (IOException ignored) {
+        } finally {
+            close();
         }
-        System.out.println(message); // server console log
     }
 
-    private void closeEverything() {
+    private void send(String json) {
         try {
-            if (bufferedReader != null) bufferedReader.close();
-            if (bufferedWriter != null) bufferedWriter.close();
-            if (socket != null) socket.close();
-
-            synchronized (clientHandlers) {
-                clientHandlers.remove(this);
-            }
-
-            broadcastMessage("Server: " + username + " has left the chat");
-
+            writer.write(json);
+            writer.newLine();
+            writer.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            close();
         }
+    }
+    // For online user only
+    public static boolean sendToUser(int userId, String json) {
+        ClientHandler client = ONLINE_USERS.get(userId);
+        if (client != null) {
+            client.send(json);
+            return true;
+        }
+        return false;
+    }
+    // For online users only
+    public static void sendToUsers(List<Integer> userIds, String json) {
+        for (int id : userIds) {
+            sendToUser(id, json);
+        }
+    }
+
+    public static void broadcastRaw(String json) {
+        for (ClientHandler client : ONLINE_USERS.values()) {
+            client.send(json);
+        }
+    }
+
+    private void close() {
+        try {
+            if (session != null) {
+                ONLINE_USERS.remove(session.getUserId());
+            }
+            socket.close();
+        } catch (IOException ignored) {}
     }
 }

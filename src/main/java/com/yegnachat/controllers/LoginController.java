@@ -3,7 +3,7 @@ package com.yegnachat.controllers;
 import com.yegnachat.client.ChatClient;
 import com.yegnachat.dao.UserDao;
 import com.yegnachat.models.User;
-import com.yegnachat.server.PasswordUtil;
+import com.yegnachat.util.PasswordUtil;
 import com.yegnachat.session.Session;
 import com.yegnachat.util.Navigator;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -77,8 +77,7 @@ public class LoginController {
         }
 
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
-            // TODO -> USE A DAMN UserDao GPT cmon
-            // TODO-> USE SESSION
+
             UserDao userDao = new UserDao(conn);
 
             User user = userDao.getUserByUsername(username);

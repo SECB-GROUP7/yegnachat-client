@@ -1,4 +1,4 @@
-package com.yegnachat.server;
+package com.yegnachat.util;
 
 import org.mindrot.jbcrypt.BCrypt;
 

@@ -2,6 +2,8 @@ package com.yegnachat.dao;
 
 import com.yegnachat.models.User;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.sql.*;
 
 public class UserDao {
@@ -46,4 +48,28 @@ public class UserDao {
                 rs.getTimestamp("created_at").toLocalDateTime()
         );
     }
+
+    public User getUserById(int id) throws SQLException {
+        String sql = "SELECT * FROM users WHERE id = ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setInt(1, id);
+
+        ResultSet rs = ps.executeQuery();
+        return rs.next() ? extractUser(rs) : null;
+    }
+
+    public List<User> listAllExcept(int userId) throws SQLException {
+        String sql = "SELECT * FROM users WHERE id <> ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setInt(1, userId);
+
+        ResultSet rs = ps.executeQuery();
+        List<User> users = new ArrayList<>();
+
+        while (rs.next()) {
+            users.add(extractUser(rs));
+        }
+        return users;
+    }
+
 }

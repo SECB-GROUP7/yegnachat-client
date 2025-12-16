@@ -3,7 +3,7 @@ package com.yegnachat.controllers;
 import com.yegnachat.client.ChatClient;
 import com.yegnachat.dao.UserDao;
 import com.yegnachat.models.User;
-import com.yegnachat.server.PasswordUtil;
+import com.yegnachat.util.PasswordUtil;
 import io.github.cdimascio.dotenv.Dotenv;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -12,7 +12,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.sql.*;
-import java.util.Locale;
 
 public class SignupController {
 
