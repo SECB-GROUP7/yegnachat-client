@@ -15,6 +15,7 @@ module com.yegnachat.client {
     requires java.sql;
     requires java.dotenv;
     requires com.google.gson;
+    requires java.net.http;
 
     opens com.yegnachat.client to javafx.fxml;
     exports com.yegnachat.client;

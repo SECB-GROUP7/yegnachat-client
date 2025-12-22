@@ -1,0 +1,20 @@
+.root {
+    -fx-font-family: "Noto Sans", "Noto Sans Ethiopic", "Noto Sans CJK", "System";
+    -fx-font-size: 14px;
+}
+
+.label {
+    -fx-font-family: "Noto Sans Ethiopic";
+}
+
+.button {
+    -fx-font-family: "Noto Sans", "Noto Sans Ethiopic", "Noto Sans CJK", "System";
+}
+
+.text-field {
+    -fx-font-family: "Noto Sans Ethiopic";
+}
+
+.text-area {
+    -fx-font-family: "Noto Sans", "Noto Sans Ethiopic", "Noto Sans CJK", "System";
+}

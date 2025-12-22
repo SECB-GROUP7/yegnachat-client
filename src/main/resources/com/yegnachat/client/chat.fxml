@@ -6,15 +6,18 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane prefHeight="700" prefWidth="1100" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.yegnachat.controllers.ChatController">
+<BorderPane prefHeight="700" prefWidth="1100"
+            xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.yegnachat.controllers.ChatController">
 
+    <!-- ================= CENTER ================= -->
     <center>
         <HBox>
 
-            <!-- ========== MAIN SPLIT ========== -->
             <SplitPane dividerPositions="0.28" HBox.hgrow="ALWAYS">
 
-                <!-- LEFT CHAT LIST -->
+                <!-- ========= LEFT CHAT LIST ========= -->
                 <VBox prefWidth="300">
 
                     <HBox>
@@ -36,7 +39,7 @@
 
                 </VBox>
 
-                <!-- CHAT AREA -->
+                <!-- ========= CHAT AREA ========= -->
                 <BorderPane>
 
                     <!-- Header -->
@@ -46,7 +49,10 @@
                                 <Insets bottom="10" left="15" right="15" top="10" />
                             </padding>
 
-                            <ImageView fx:id="chatAvatar" fitHeight="40" fitWidth="40" preserveRatio="true" />
+                            <ImageView fx:id="chatAvatar"
+                                       fitHeight="40"
+                                       fitWidth="40"
+                                       preserveRatio="true" />
 
                             <VBox>
                                 <Label fx:id="chatTitle" text="Select a chat">
@@ -54,7 +60,9 @@
                                         <Font name="System Bold" size="15" />
                                     </font>
                                 </Label>
-                                <Label fx:id="chatSubtitle" style="-fx-text-fill: gray;" text="" />
+                                <Label fx:id="chatSubtitle"
+                                       style="-fx-text-fill: gray;"
+                                       text="" />
                             </VBox>
 
                             <Region HBox.hgrow="ALWAYS" />
@@ -80,9 +88,16 @@
                             <padding>
                                 <Insets bottom="10" left="15" right="15" top="10" />
                             </padding>
+                            <Button fx:id="translateButton"
+                                    text="ET" onAction="#toggleTranslate"/>
 
-                            <TextField fx:id="messageField" promptText="Type a message..." HBox.hgrow="ALWAYS" />
-                            <Button fx:id="sendButton" text="Send" />
+                            <TextField fx:id="messageField"
+                                       promptText="Type a message..."
+                                       HBox.hgrow="ALWAYS" />
+
+                            <Button fx:id="sendButton"
+                                    text="Send"
+                                    onAction="#sendMessage"/>
                         </HBox>
                     </bottom>
 
@@ -92,29 +107,31 @@
 
         </HBox>
     </center>
-   <left>
 
-         <!-- ========== LEFT ICON BAR ========== -->
-         <VBox prefWidth="60" BorderPane.alignment="CENTER">
+    <!-- ================= LEFT ICON BAR ================= -->
+    <left>
+        <VBox prefWidth="60" BorderPane.alignment="CENTER">
 
-             <Region VBox.vgrow="ALWAYS" />
+            <Region VBox.vgrow="ALWAYS" />
 
-             <!-- Settings SVG Button -->
-             <Button fx:id="settingsButton" style="-fx-background-color: transparent;" textFill="#db000000">
-                 <graphic>
-                     <ImageView fitHeight="36.0" fitWidth="47.0" pickOnBounds="true" preserveRatio="true">
-                         <Image url="@../../../icons/settings.png"/>
-                     </ImageView>
-                 </graphic>
-                 <VBox.margin>
-                     <Insets bottom="15" />
-                 </VBox.margin>
-                 <tooltip>
-                     <Tooltip text="Settings" />
-                 </tooltip>
-             </Button>
+            <Button fx:id="settingsButton"
+                    style="-fx-background-color: transparent;">
+                <graphic>
+                    <ImageView fitHeight="36"
+                               fitWidth="36"
+                               preserveRatio="true">
+                        <Image url="@../../../icons/settings.png"/>
+                    </ImageView>
+                </graphic>
+                <VBox.margin>
+                    <Insets bottom="15" />
+                </VBox.margin>
+                <tooltip>
+                    <Tooltip text="Settings" />
+                </tooltip>
+            </Button>
 
-         </VBox>
-   </left>
+        </VBox>
+    </left>
 
 </BorderPane>

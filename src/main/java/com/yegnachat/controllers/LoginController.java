@@ -88,8 +88,11 @@ public class LoginController {
 
         Platform.runLater(() -> {
             if ("ok".equals(status)) {
-                Session.setToken(payload.get("token").getAsString());
-                Session.setUserId(payload.get("user_id").getAsInt());
+                Session.setAuth(
+                        payload.get("token").getAsString(),
+                        payload.get("user_id").getAsInt()
+                );
+                Session.setSocket(socket);
                 openChat();
             } else {
                 showAlert("Error", "Invalid username or password");
@@ -104,13 +107,23 @@ public class LoginController {
             FXMLLoader loader =
                     new FXMLLoader(getClass().getResource("/com/yegnachat/client/chat.fxml"));
 
-            Scene scene = new Scene(loader.load());
+            BorderPane root = loader.load();
+
+            // Load the scene
+            Scene scene = new Scene(root);
+
+            scene.getStylesheets().add(
+                    getClass().getResource("/css/chat.css").toExternalForm()
+            );
+
+
             stage.setScene(scene);
             stage.setTitle("YegnaChat");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     private void switchTo(String fxml) {
         try {
