@@ -1,25 +1,34 @@
 package com.yegnachat.session;
 
-import com.yegnachat.models.User;
-
 public final class Session {
-    private static User currentUser;
+
+    private static String token;
+    private static int userId;
 
     private Session() {}
 
-    public static void setCurrentUser(User user) {
-        currentUser = user;
+    public static void setToken(String t) {
+        token = t;
     }
 
-    public static User getCurrentUser() {
-        return currentUser;
+    public static String getToken() {
+        return token;
     }
 
-    public static void clear() {
-        currentUser = null;
+    public static void setUserId(int id) {
+        userId = id;
+    }
+
+    public static int getUserId() {
+        return userId;
     }
 
     public static boolean isLoggedIn() {
-        return currentUser != null;
+        return token != null && !token.isBlank();
+    }
+
+    public static void clear() {
+        token = null;
+        userId = 0;
     }
 }

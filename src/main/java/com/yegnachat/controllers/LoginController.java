@@ -1,19 +1,18 @@
 package com.yegnachat.controllers;
 
-import com.yegnachat.client.ChatClient;
-import com.yegnachat.dao.UserDao;
-import com.yegnachat.models.User;
-import com.yegnachat.util.PasswordUtil;
+import com.google.gson.JsonObject;
+import com.yegnachat.net.ChatClientSocket;
 import com.yegnachat.session.Session;
-import com.yegnachat.util.Navigator;
 import io.github.cdimascio.dotenv.Dotenv;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
-import java.sql.*;
+import java.net.Socket;
 
 public class LoginController {
 
@@ -24,90 +23,101 @@ public class LoginController {
     @FXML
     private PasswordField passwordField;
     @FXML
-    private TextField passwordVisibleField;
-    @FXML
-    private CheckBox showPasswordCheck;
-    @FXML
     private Button loginButton;
     @FXML
     private Hyperlink goToSignup;
+    @FXML
+    private TextField passwordVisibleField;
+    @FXML
+    private CheckBox showPasswordCheck;
 
-    private String DB_URL;
-    private String DB_USER;
-    private String DB_PASS;
+    private ChatClientSocket socket;
 
     @FXML
     public void initialize() {
         Dotenv dotenv = Dotenv.load();
+        try {
+            socket = new ChatClientSocket(new Socket(dotenv.get("HOST"), Integer.parseInt(dotenv.get("PORT"))));
+            socket.startListening();
+        } catch (Exception e) {
+            showAlert("Error", "Cannot connect to server");
+            return;
+        }
+        // SHOW/HIDE password
+        passwordVisibleField.textProperty().bindBidirectional(passwordField.textProperty());
 
-        DB_URL = "jdbc:mysql://" + dotenv.get("DB_HOST") + ":" + dotenv.get("DB_PORT") + "/" + dotenv.get("DB_NAME");
-        DB_USER = dotenv.get("DB_USER");
-        DB_PASS = dotenv.get("DB_PASS");
+        showPasswordCheck.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
+            passwordVisibleField.setVisible(isSelected);
+            passwordVisibleField.setManaged(isSelected);
 
-        // Show/hide password
-        showPasswordCheck.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                passwordVisibleField.setText(passwordField.getText());
-                passwordVisibleField.setVisible(true);
-                passwordVisibleField.setManaged(true);
-                passwordField.setVisible(false);
-                passwordField.setManaged(false);
-            } else {
-                passwordField.setText(passwordVisibleField.getText());
-                passwordField.setVisible(true);
-                passwordField.setManaged(true);
-                passwordVisibleField.setVisible(false);
-                passwordVisibleField.setManaged(false);
-            }
+            passwordField.setVisible(!isSelected);
+            passwordField.setManaged(!isSelected);
         });
 
-        goToSignup.setOnAction(e -> switchTo("signup.fxml"));
+        socket.setOnMessage(this::handleServerMessage);
+
         loginButton.setOnAction(e -> login());
+        goToSignup.setOnAction(e -> switchTo("signup.fxml"));
     }
 
     private void login() {
         String username = usernameField.getText();
-        String password = showPasswordCheck.isSelected()
-                ? passwordVisibleField.getText()
-                : passwordField.getText();
+        String password = passwordField.getText();
 
         if (username.isBlank() || password.isBlank()) {
             showAlert("Error", "All fields required");
             return;
         }
 
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("username", username);
+        payload.addProperty("password", password);
 
-            UserDao userDao = new UserDao(conn);
+        JsonObject msg = new JsonObject();
+        msg.addProperty("type", "login");
+        msg.add("payload", payload);
 
-            User user = userDao.getUserByUsername(username);
-
-            if (user == null) {
-                showAlert("Error", "Invalid username or password");
-                return;
-            }
-
-
-            if (!PasswordUtil.checkPassword(password, user.getPasswordHash())) { // Replace with hashing ASAP
-                showAlert("Error", "Invalid username or password");
-                return;
-            }
-
-            showAlert("Success", "Logged in!");
-            Session.setCurrentUser(user);
-            Navigator.switchTo(loginButton, "chat.fxml", "Chat");
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            showAlert("Error", "Database error");
-        }
+        socket.send(msg);
     }
 
+    private void handleServerMessage(JsonObject msg) {
+        if (!"login_response".equals(msg.get("type").getAsString())) return;
+
+        JsonObject payload = msg.getAsJsonObject("payload");
+        String status = payload.get("status").getAsString();
+
+        Platform.runLater(() -> {
+            if ("ok".equals(status)) {
+                Session.setToken(payload.get("token").getAsString());
+                Session.setUserId(payload.get("user_id").getAsInt());
+                openChat();
+            } else {
+                showAlert("Error", "Invalid username or password");
+            }
+        });
+    }
+
+    private void openChat() {
+        try {
+            Stage stage = (Stage) rootPane.getScene().getWindow();
+
+            FXMLLoader loader =
+                    new FXMLLoader(getClass().getResource("/com/yegnachat/client/chat.fxml"));
+
+            Scene scene = new Scene(loader.load());
+            stage.setScene(scene);
+            stage.setTitle("YegnaChat");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     private void switchTo(String fxml) {
         try {
             Stage stage = (Stage) rootPane.getScene().getWindow();
-            stage.getScene().setRoot(FXMLLoader.load(ChatClient.class.getResource(fxml)));
+            stage.getScene().setRoot(FXMLLoader.load(
+                    getClass().getResource("/com/yegnachat/client/" + fxml)
+            ));
         } catch (Exception e) {
             e.printStackTrace();
         }

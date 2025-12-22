@@ -1,89 +1,87 @@
 package com.yegnachat.controllers;
 
-import com.yegnachat.client.ChatClient;
-import com.yegnachat.dao.UserDao;
-import com.yegnachat.models.User;
-import com.yegnachat.util.PasswordUtil;
+import com.google.gson.JsonObject;
+import com.yegnachat.net.ChatClientSocket;
 import io.github.cdimascio.dotenv.Dotenv;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.stage.Stage;
 
-import java.sql.*;
+import java.net.Socket;
 
 public class SignupController {
 
-    @FXML
-    private BorderPane rootPane;
-    @FXML
-    private TextField usernameField;
-    @FXML
-    private PasswordField passwordField;
-    @FXML
-    private PasswordField confirmPasswordField;
-    @FXML
-    private Button signupButton;
-    @FXML
-    private Hyperlink goToLogin;
+    @FXML private BorderPane rootPane;
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private PasswordField confirmPasswordField;
+    @FXML private Button signupButton;
+    @FXML private Hyperlink goToLogin;
 
-    private String DB_URL;
-    private String DB_USER;
-    private String DB_PASS;
+    private ChatClientSocket socket;
 
     @FXML
     public void initialize() {
         Dotenv dotenv = Dotenv.load();
-        DB_URL = "jdbc:mysql://" + dotenv.get("DB_HOST") + ":" + dotenv.get("DB_PORT") + "/" + dotenv.get("DB_NAME");
-        DB_USER = dotenv.get("DB_USER");
-        DB_PASS = dotenv.get("DB_PASS");
+        try {
+            socket = new ChatClientSocket(new Socket(dotenv.get("HOST"),Integer.parseInt(dotenv.get("PORT"))));
+            socket.startListening();
+        } catch (Exception e) {
+            showAlert("Error", "Cannot connect to server");
+            return;
+        }
+
+        socket.setOnMessage(this::handleServerMessage);
 
         signupButton.setOnAction(e -> signup());
-        goToLogin.setOnAction(e -> switchTo("login.fxml"));
+        goToLogin.setOnAction(e -> switchToLogin());
     }
 
     private void signup() {
-        String username = usernameField.getText();
-        String pass = passwordField.getText();
-        String confirm = confirmPasswordField.getText();
+        String u = usernameField.getText();
+        String p = passwordField.getText();
+        String c = confirmPasswordField.getText();
 
-        if (username.isBlank() || pass.isBlank() || confirm.isBlank()) {
+        if (u.isBlank() || p.isBlank() || c.isBlank()) {
             showAlert("Error", "All fields required");
             return;
         }
 
-        if (!pass.equals(confirm)) {
+        if (!p.equals(c)) {
             showAlert("Error", "Passwords do not match");
             return;
         }
 
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
-            UserDao userDao = new UserDao(conn);
+        JsonObject payload = new JsonObject();
+        payload.addProperty("username", u);
+        payload.addProperty("password", p);
+        payload.addProperty("avatar_url", "");
+        payload.addProperty("bio", "");
 
-            User user = new User();
-            user.setUsername(username.replaceAll("\\s+", "").toLowerCase());
-            user.setPasswordHash(PasswordUtil.hashPassword(pass));
-            user.setBio(null);
-            user.setAvatarUrl(null);
+        JsonObject msg = new JsonObject();
+        msg.addProperty("type", "signup");
+        msg.add("payload", payload);
 
-            if (userDao.createUser(user)) {
-                showAlert("Success", "Account created! You can log in now.");
-                switchTo("login.fxml");
-            } else {
-                showAlert("Error", "Error creating Account.");
-            }
-            
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            showAlert("Error", "Database error");
-        }
+        socket.send(msg);
     }
 
-    private void switchTo(String fxml) {
+    private void handleServerMessage(JsonObject msg) {
+        if (!"signup_response".equals(msg.get("type").getAsString())) return;
+
+        Platform.runLater(() -> {
+            showAlert("Success", "Account created! Please login.");
+            switchToLogin();
+        });
+    }
+
+    private void switchToLogin() {
         try {
-            Stage stage = (Stage) rootPane.getScene().getWindow();
-            stage.getScene().setRoot(FXMLLoader.load(ChatClient.class.getResource(fxml)));
+            rootPane.getScene().setRoot(
+                    javafx.fxml.FXMLLoader.load(
+                            getClass().getResource("/com/yegnachat/client/login.fxml")
+                    )
+            );
         } catch (Exception e) {
             e.printStackTrace();
         }

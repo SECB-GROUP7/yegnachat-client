@@ -1,58 +1,120 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.*?>
 
-<BorderPane prefHeight="500.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/17.0.12"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.yegnachat.controllers.ChatController">
-
-    <top>
-        <HBox spacing="10.0">
-            <padding>
-                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-            </padding>
-            <children>
-                <ImageView fx:id="avatarView" fitHeight="36.0" fitWidth="36.0" pickOnBounds="true" preserveRatio="true" />
-
-                <Label fx:id="usernameLabel" text="Username">
-                    <font>
-                        <Font name="System Bold" size="16.0" />
-                    </font>
-                </Label>
-
-                <Region HBox.hgrow="ALWAYS" />
-
-                <Button fx:id="logoutButton" mnemonicParsing="false" text="Logout" />
-            </children>
-        </HBox>
-    </top>
+<BorderPane prefHeight="700" prefWidth="1100" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.yegnachat.controllers.ChatController">
 
     <center>
-        <ScrollPane fx:id="messagesScroll" fitToWidth="true" BorderPane.alignment="CENTER">
-            <content>
-                <VBox fx:id="messagesBox" spacing="8.0">
-                    <padding>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                    </padding>
-                </VBox>
-            </content>
-        </ScrollPane>
-    </center>
+        <HBox>
 
-    <bottom>
-        <HBox spacing="8.0" BorderPane.alignment="CENTER">
-            <padding>
-                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-            </padding>
-            <children>
-                <TextField fx:id="messageField" promptText="Type a message..." HBox.hgrow="ALWAYS" />
-                <Button fx:id="sendButton" mnemonicParsing="false" text="Send" />
-            </children>
+            <!-- ========== MAIN SPLIT ========== -->
+            <SplitPane dividerPositions="0.28" HBox.hgrow="ALWAYS">
+
+                <!-- LEFT CHAT LIST -->
+                <VBox prefWidth="300">
+
+                    <HBox>
+                        <padding>
+                            <Insets bottom="10" left="10" right="10" top="10" />
+                        </padding>
+                        <TextField fx:id="searchField" promptText="Search" />
+                    </HBox>
+
+                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+                        <content>
+                            <VBox fx:id="chatListBox" spacing="6">
+                                <padding>
+                                    <Insets bottom="8" left="8" right="8" top="8" />
+                                </padding>
+                            </VBox>
+                        </content>
+                    </ScrollPane>
+
+                </VBox>
+
+                <!-- CHAT AREA -->
+                <BorderPane>
+
+                    <!-- Header -->
+                    <top>
+                        <HBox spacing="10">
+                            <padding>
+                                <Insets bottom="10" left="15" right="15" top="10" />
+                            </padding>
+
+                            <ImageView fx:id="chatAvatar" fitHeight="40" fitWidth="40" preserveRatio="true" />
+
+                            <VBox>
+                                <Label fx:id="chatTitle" text="Select a chat">
+                                    <font>
+                                        <Font name="System Bold" size="15" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="chatSubtitle" style="-fx-text-fill: gray;" text="" />
+                            </VBox>
+
+                            <Region HBox.hgrow="ALWAYS" />
+                        </HBox>
+                    </top>
+
+                    <!-- Messages -->
+                    <center>
+                        <ScrollPane fx:id="messagesScroll" fitToWidth="true">
+                            <content>
+                                <VBox fx:id="messagesBox" spacing="8">
+                                    <padding>
+                                        <Insets bottom="12" left="12" right="12" top="12" />
+                                    </padding>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+                    </center>
+
+                    <!-- Input -->
+                    <bottom>
+                        <HBox spacing="10">
+                            <padding>
+                                <Insets bottom="10" left="15" right="15" top="10" />
+                            </padding>
+
+                            <TextField fx:id="messageField" promptText="Type a message..." HBox.hgrow="ALWAYS" />
+                            <Button fx:id="sendButton" text="Send" />
+                        </HBox>
+                    </bottom>
+
+                </BorderPane>
+
+            </SplitPane>
+
         </HBox>
-    </bottom>
+    </center>
+   <left>
+
+         <!-- ========== LEFT ICON BAR ========== -->
+         <VBox prefWidth="60" BorderPane.alignment="CENTER">
+
+             <Region VBox.vgrow="ALWAYS" />
+
+             <!-- Settings SVG Button -->
+             <Button fx:id="settingsButton" style="-fx-background-color: transparent;" textFill="#db000000">
+                 <graphic>
+                     <ImageView fitHeight="36.0" fitWidth="47.0" pickOnBounds="true" preserveRatio="true">
+                         <Image url="@../../../icons/settings.png"/>
+                     </ImageView>
+                 </graphic>
+                 <VBox.margin>
+                     <Insets bottom="15" />
+                 </VBox.margin>
+                 <tooltip>
+                     <Tooltip text="Settings" />
+                 </tooltip>
+             </Button>
+
+         </VBox>
+   </left>
 
 </BorderPane>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.yegnachat.controllers.SettingsController"
+            prefWidth="350"
+            prefHeight="450"
+            style="-fx-background-color: #ffffff;">
+
+    <!-- Top bar -->
+    <top>
+    <HBox>
+        <padding>
+            <Insets top="10" right="10" bottom="10" left="10"/>
+        </padding>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Button fx:id="logoutButton" style="-fx-background-color: transparent;">
+            <graphic>
+                <ImageView fitWidth="25" fitHeight="25" pickOnBounds="true" preserveRatio="true">
+                    <Image url="@../../../icons/logout.png"/>
+                </ImageView>
+            </graphic>
+        </Button>
+        <Button fx:id="closeButton" style="-fx-background-color: transparent;">
+            <graphic>
+                <ImageView fitWidth="20" fitHeight="20" pickOnBounds="true" preserveRatio="true">
+                    <Image url="@../../../icons/close.png"/>
+                </ImageView>
+            </graphic>
+        </Button>
+
+    </HBox>
+    </top>
+    <!-- Content -->
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="12">
+            <padding>
+                <Insets top="20"/>
+            </padding>
+
+            <ImageView fx:id="avatarImage" fitHeight="100" fitWidth="100" preserveRatio="true">
+                <clip>
+                    <Circle centerX="50" centerY="50" radius="50"/>
+                </clip>
+            </ImageView>
+
+            <Label fx:id="usernameLabel" text="Username">
+                <font>
+                    <Font name="System Bold" size="16"/>
+                </font>
+            </Label>
+
+            <Label fx:id="bioLabel" text="Bio goes here" wrapText="true" style="-fx-text-fill: gray;"/>
+
+            <!-- Edit Bio Button -->
+            <Button fx:id="editBioButton" text="Edit Bio" style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-background-radius: 5;"/>
+        </VBox>
+    </center>
+
+</BorderPane>
