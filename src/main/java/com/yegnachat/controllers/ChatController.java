@@ -6,99 +6,146 @@ import com.yegnachat.net.ChatClientSocket;
 import com.yegnachat.session.Session;
 import com.yegnachat.util.TranslationService;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 
-import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatController {
 
-    @FXML private Button settingsButton;
-    @FXML private VBox chatListBox;
-    @FXML private VBox messagesBox;
-    @FXML private ScrollPane messagesScroll;
-    @FXML private TextField messageField;
-    @FXML private Button sendButton;
-    @FXML private Label chatTitle;
-    @FXML private Label chatSubtitle;
+    /* ================= FXML ================= */
+    @FXML
+    private VBox chatListBox;
+    @FXML
+    private VBox messagesBox;
+    @FXML
+    private ScrollPane messagesScroll;
+    @FXML
+    private TextField messageField;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private Button sendButton;
+    @FXML
+    private Button translateButton;
+    @FXML
+    private Button settingsButton;
+    @FXML
+    private Label chatTitle;
+    @FXML
+    private Label chatSubtitle;
+    @FXML
+    private ImageView chatAvatar;
 
-    private Stage settingsStage;
-
+    /* ================= STATE ================= */
     private ChatClientSocket socket;
     private Integer activeChatId = null;
     private boolean activeChatIsGroup = false;
+
+    private final List<ChatMessage> chatHistory = new ArrayList<>();
+    private TranslationService translationService;
     private boolean translateMode = false;
 
-    private record ChatMessage(String sender, String content) {}
-    private final List<ChatMessage> chatHistory = new ArrayList<>();
+    private record ChatMessage(int senderId, String senderName, String avatarUrl, String content) {
+    }
 
-    // ================= INITIALIZE =================
+    /* ================= INIT ================= */
     @FXML
     public void initialize() {
+        System.out.println("[INIT] Initializing ChatController...");
+
         Font.loadFont(
                 getClass().getResourceAsStream("/fonts/NotoSansEthiopicVariable.ttf"),
                 14
         );
 
         socket = Session.getSocket();
-        if (socket == null)
-            throw new IllegalStateException("Socket missing in session");
+        if (socket == null) throw new IllegalStateException("Socket missing");
+
+        translationService = new TranslationService();
+        //translationService.setTargetLanguage(Session.getPreferredLanguageCode());
 
         socket.setOnMessage(this::handleServerMessage);
 
-        settingsButton.setOnAction(this::openSettingsWindow);
         sendButton.setOnAction(e -> sendMessage());
+        translateButton.setOnAction(e -> toggleTranslate());
 
+        setAvatar(null);
         requestUserList();
     }
 
-    // ================= REQUEST LIST =================
+    /* ================= AVATAR ================= */
+    private Image loadAvatar(String url) {
+        InputStream is;
+
+        if (url == null || url.isBlank()) {
+            is = getClass().getResourceAsStream("/icons/user.png");
+        } else {
+            is = getClass().getResourceAsStream(url);
+            if (is == null) {
+                System.out.println("[AVATAR] Could not load avatar at " + url + ", using default");
+                is = getClass().getResourceAsStream("/icons/user.png");
+            }
+        }
+        return new Image(is);
+    }
+
+    private void setAvatar(String url) {
+        chatAvatar.setImage(loadAvatar(url));
+    }
+
+    /* ================= REQUEST LIST ================= */
     private void requestUserList() {
+        System.out.println("[REQUEST] Sending list_users request...");
         JsonObject msg = new JsonObject();
         msg.addProperty("type", "list_users");
         msg.add("payload", new JsonObject());
         socket.send(msg);
     }
 
-    // ================= OPEN CHATS =================
-    private void openPrivateChat(int userId, String username) {
-        activeChatId = userId;
+    /* ================= OPEN CHAT ================= */
+    private void openGroup(int id, String name) {
+        System.out.println("[OPEN] Opening group chat: " + id + " - " + name);
+        activeChatId = id;
+        activeChatIsGroup = true;
+
+        chatTitle.setText(name);
+        chatSubtitle.setText("Group chat");
+        setAvatar(null);
+
+        chatHistory.clear();
+        messagesBox.getChildren().clear();
+
+        requestHistory("group", "group_id", id);
+    }
+
+    private void openPrivate(int id, String username) {
+        System.out.println("[OPEN] Opening private chat: " + id + " - " + username);
+        activeChatId = id;
         activeChatIsGroup = false;
 
         chatTitle.setText(username);
         chatSubtitle.setText("Private chat");
+        setAvatar(null);
 
-        loadHistory("private", "user_id", userId);
-    }
-
-    private void openGroupChat(int groupId, String groupName) {
-        activeChatId = groupId;
-        activeChatIsGroup = true;
-
-        chatTitle.setText(groupName);
-        chatSubtitle.setText("Group chat");
-
-        loadHistory("group", "group_id", groupId);
-    }
-
-    private void loadHistory(String type, String key, int id) {
-        messagesBox.getChildren().clear();
         chatHistory.clear();
+        messagesBox.getChildren().clear();
 
+        requestHistory("private", "user_id", id);
+    }
+
+    private void requestHistory(String type, String key, int id) {
+        System.out.println("[REQUEST] Fetching history: " + type + " for id=" + id);
         JsonObject payload = new JsonObject();
         payload.addProperty("chat_type", type);
-        payload.addProperty(key, String.valueOf(id));
+        payload.addProperty(key, String.valueOf(id)); // <-- convert int to string
 
         JsonObject msg = new JsonObject();
         msg.addProperty("type", "fetch_history");
@@ -107,16 +154,23 @@ public class ChatController {
         socket.send(msg);
     }
 
-    // ================= SEND MESSAGE =================
-    @FXML
-    private void sendMessage() {
-        if (activeChatId == null) return;
 
-        String text = messageField.getText();
-        if (text.isBlank()) return;
+    /* ================= SEND ================= */
+    private void sendMessage() {
+        if (activeChatId == null) {
+            System.out.println("[SEND] No active chat selected.");
+            return;
+        }
+        if (messageField.getText().isBlank()) {
+            System.out.println("[SEND] Message field is blank.");
+            return;
+        }
+
+        String content = messageField.getText();
+        System.out.println("[SEND] Sending message: " + content);
 
         JsonObject payload = new JsonObject();
-        payload.addProperty("content", text);
+        payload.addProperty("content", content);
 
         if (activeChatIsGroup)
             payload.addProperty("group_id", String.valueOf(activeChatId));
@@ -127,149 +181,184 @@ public class ChatController {
         msg.addProperty("type", "send_message");
         msg.add("payload", payload);
 
+        chatHistory.add(new ChatMessage(Session.getUserId(), "Me", "", content));
+        renderMessages();
+
+
         socket.send(msg);
 
-        // Optimistic UI update
-        chatHistory.add(new ChatMessage("Me", text));
-        renderMessages();
         messageField.clear();
     }
 
-    // ================= SERVER HANDLER =================
+
+
+    /* ================= SERVER ================= */
     private void handleServerMessage(JsonObject msg) {
-        switch (msg.get("type").getAsString()) {
+        String type = msg.has("type") ? msg.get("type").getAsString() : "unknown";
+        System.out.println("[SERVER] Received message type: " + type);
+
+        switch (type) {
 
             case "list_users_response" -> Platform.runLater(() -> {
+                System.out.println("[SERVER] Handling list_users_response...");
                 chatListBox.getChildren().clear();
-
-                JsonArray groups = msg.getAsJsonObject("payload").getAsJsonArray("groups");
+                JsonObject payload = msg.getAsJsonObject("payload");
+                JsonArray groups = payload.getAsJsonArray("groups");
                 if (groups != null) {
                     for (var g : groups) {
                         JsonObject o = g.getAsJsonObject();
-                        int id = o.get("id").getAsInt();
-                        String name = o.get("name").getAsString();
-
-                        Button btn = new Button(name + " (Group)");
-                        btn.setMaxWidth(Double.MAX_VALUE);
-                        btn.setOnAction(e -> openGroupChat(id, name));
-                        chatListBox.getChildren().add(btn);
+                        Button b = new Button(o.get("name").getAsString());
+                        b.setMaxWidth(Double.MAX_VALUE);
+                        b.setOnAction(e -> openGroup(o.get("id").getAsInt(), o.get("name").getAsString()));
+                        chatListBox.getChildren().add(b);
+                        System.out.println("[LIST] Added group: " + o.get("name").getAsString());
                     }
-                    chatListBox.getChildren().add(new Separator());
                 }
 
-                JsonArray users = msg.getAsJsonObject("payload").getAsJsonArray("users");
+                JsonArray users = payload.getAsJsonArray("users");
                 if (users != null) {
                     for (var u : users) {
                         JsonObject o = u.getAsJsonObject();
-                        int id = o.get("id").getAsInt();
-                        String name = o.get("username").getAsString();
-
-                        Button btn = new Button(name);
-                        btn.setMaxWidth(Double.MAX_VALUE);
-                        btn.setOnAction(e -> openPrivateChat(id, name));
-                        chatListBox.getChildren().add(btn);
+                        Button b = new Button(o.get("username").getAsString());
+                        b.setMaxWidth(Double.MAX_VALUE);
+                        b.setOnAction(e -> openPrivate(o.get("id").getAsInt(), o.get("username").getAsString()));
+                        chatListBox.getChildren().add(b);
+                        System.out.println("[LIST] Added user: " + o.get("username").getAsString());
                     }
                 }
             });
 
             case "fetch_history_response" -> Platform.runLater(() -> {
-                chatHistory.clear();
-                messagesBox.getChildren().clear();
+                System.out.println("[SERVER] Handling fetch_history_response...");
+                JsonObject payload = msg.getAsJsonObject("payload");
+                if (!"ok".equals(payload.get("status").getAsString())) {
+                    System.out.println("[ERROR] fetch_history_response status not ok.");
+                    return;
+                }
 
-                JsonArray messages = msg.getAsJsonObject("payload").getAsJsonArray("messages");
-                if (messages != null) {
-                    for (var m : messages) {
+                chatHistory.clear();
+
+                JsonArray arr = payload.getAsJsonArray("messages");
+                if (arr != null) {
+                    for (var m : arr) {
                         JsonObject o = m.getAsJsonObject();
-                        chatHistory.add(new ChatMessage(
-                                o.get("sender").getAsString(),
-                                o.get("content").getAsString()
-                        ));
+                        int senderId = o.get("sender_id").getAsInt();
+                        String senderName = o.get("sender_username").getAsString();
+                        String avatarUrl = o.has("avatar_url") ? o.get("avatar_url").getAsString() : "";
+                        String content = o.get("content").getAsString();
+                        System.out.println("[HISTORY] Message from " + senderName + ": " + content);
+
+                        chatHistory.add(new ChatMessage(senderId, senderName, avatarUrl, content));
                     }
                 }
+
                 renderMessages();
             });
 
             case "send_message" -> Platform.runLater(() -> {
+                System.out.println("[SERVER] Handling incoming send_message...");
                 JsonObject p = msg.getAsJsonObject("payload");
 
-                String content = p.has("content")
-                        ? p.get("content").getAsString()
-                        : "";
+                int senderId = p.get("sender_id").getAsInt();
+                String senderName = p.get("sender_username").getAsString();
+                String avatarUrl = p.has("avatar_url") ? p.get("avatar_url").getAsString() : "";
+                String content = p.get("content").getAsString();
 
-                String sender = p.has("sender")
-                        ? p.get("sender").getAsString()
-                        : "Friend"; // fallback for private/group
+                System.out.println("[INCOMING] Message from " + senderName + ": " + content);
 
-                chatHistory.add(new ChatMessage(sender, content));
+                chatHistory.add(new ChatMessage(senderId, senderName, avatarUrl, content));
                 renderMessages();
             });
+
+            default -> System.out.println("[SERVER] Unknown message type: " + type);
         }
     }
 
-    // ================= TRANSLATION =================
+    /* ================= TRANSLATE ================= */
     @FXML
     private void toggleTranslate() {
         translateMode = !translateMode;
+        System.out.println("[TRANSLATE] Translate mode: " + translateMode);
         renderMessages();
     }
 
-    // ================= RENDER =================
+    /* ================= UI ================= */
     private void renderMessages() {
+        System.out.println("[UI] Rendering messages. Total: " + chatHistory.size());
         messagesBox.getChildren().clear();
 
+        int myId = Session.getUserId();
+
         for (ChatMessage m : chatHistory) {
-            boolean mine = m.sender().equals("Me");
+            boolean mine = m.senderId() == myId;
 
-            if (translateMode && !mine) {
-                Label placeholder = new Label("Translating...");
-                HBox box = new HBox(placeholder);
-                box.setStyle("-fx-alignment: center-left;");
-                messagesBox.getChildren().add(box);
+            VBox messageContainer = new VBox(2); // small spacing between name and bubble
 
-                new Thread(() -> {
-                    String t = TranslationService.translateToAmharic(m.content());
-                    Platform.runLater(() -> placeholder.setText(t));
-                }).start();
-            } else {
-                addMessageBubble(m.sender(), m.content(), mine);
+            if (!mine && activeChatIsGroup) {
+                Label nameLabel = new Label(m.senderName());
+                nameLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #888888;"); // small & subtle
+                messageContainer.getChildren().add(nameLabel);
+            }
+
+            Label msgLabel = new Label(m.content());
+            msgLabel.setWrapText(true);
+            msgLabel.setMaxWidth(420);
+            msgLabel.getStyleClass().add(mine ? "bubble-mine" : "bubble-other");
+
+            messageContainer.getChildren().add(msgLabel); // ✅ add message AFTER name
+
+            ImageView avatar = new ImageView(loadAvatar(m.avatarUrl()));
+            avatar.setFitWidth(28);
+            avatar.setFitHeight(28);
+            avatar.setPreserveRatio(true);
+
+            HBox row = new HBox(10);
+            row.setStyle(mine ? "-fx-alignment: center-right;" : "-fx-alignment: center-left;");
+
+            if (mine) row.getChildren().addAll(msgLabel, avatar); // mine: msg + avatar
+            else row.getChildren().addAll(avatar, messageContainer); // others: avatar + VBox(name+msg)
+
+            messagesBox.getChildren().add(row);
+
+            // Translate asynchronously if needed
+            if (!mine && translateMode) {
+                String originalText = m.content();
+                msgLabel.setText("translating...");
+                Platform.runLater(() -> {
+                    new Thread(() -> {
+                        String translated = translationService.translate(
+                                originalText,
+                                Session.getPreferredLanguageCode()
+                        );
+                        Platform.runLater(() -> msgLabel.setText(translated));
+                    }).start();
+                });
             }
         }
 
-        Platform.runLater(() -> messagesScroll.setVvalue(1.0));
+
+        Platform.runLater(() -> messagesScroll.setVvalue(1));
     }
 
-    private void addMessageBubble(String sender, String text, boolean mine) {
-        Label label = new Label(sender + ": " + text);
-        label.setWrapText(true);
-        label.setMaxWidth(450);
 
-        HBox box = new HBox(label);
-        box.setStyle(mine
-                ? "-fx-alignment: center-right;"
-                : "-fx-alignment: center-left;"
-        );
 
-        messagesBox.getChildren().add(box);
-    }
+    private void addMessageBubble(ChatMessage m, String text, boolean mine) {
+        Label msgLabel = new Label(text);
+        msgLabel.setWrapText(true);
+        msgLabel.setMaxWidth(420);
+        msgLabel.getStyleClass().add(mine ? "bubble-mine" : "bubble-other");
 
-    // ================= SETTINGS =================
-    private void openSettingsWindow(ActionEvent event) {
-        try {
-            if (settingsStage == null) {
-                FXMLLoader loader = new FXMLLoader(
-                        getClass().getResource("/com/yegnachat/client/settings.fxml")
-                );
+        ImageView avatar = new ImageView(loadAvatar(m.avatarUrl()));
+        avatar.setFitWidth(28);
+        avatar.setFitHeight(28);
+        avatar.setPreserveRatio(true);
 
-                BorderPane root = loader.load();
-                settingsStage = new Stage();
-                settingsStage.setTitle("Settings");
-                settingsStage.setScene(new Scene(root));
-                settingsStage.initOwner(settingsButton.getScene().getWindow());
-                settingsStage.initModality(Modality.WINDOW_MODAL);
-            }
-            settingsStage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        HBox row = new HBox(10);
+        row.setStyle(mine ? "-fx-alignment: center-right;" : "-fx-alignment: center-left;");
+
+        if (mine) row.getChildren().addAll(msgLabel, avatar);
+        else row.getChildren().addAll(avatar, msgLabel);
+
+        messagesBox.getChildren().add(row);
     }
 }

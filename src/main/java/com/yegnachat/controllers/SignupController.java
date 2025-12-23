@@ -12,12 +12,18 @@ import java.net.Socket;
 
 public class SignupController {
 
-    @FXML private BorderPane rootPane;
-    @FXML private TextField usernameField;
-    @FXML private PasswordField passwordField;
-    @FXML private PasswordField confirmPasswordField;
-    @FXML private Button signupButton;
-    @FXML private Hyperlink goToLogin;
+    @FXML
+    private BorderPane rootPane;
+    @FXML
+    private TextField usernameField;
+    @FXML
+    private PasswordField passwordField;
+    @FXML
+    private PasswordField confirmPasswordField;
+    @FXML
+    private Button signupButton;
+    @FXML
+    private Hyperlink goToLogin;
 
     private ChatClientSocket socket;
 
@@ -25,7 +31,7 @@ public class SignupController {
     public void initialize() {
         Dotenv dotenv = Dotenv.load();
         try {
-            socket = new ChatClientSocket(new Socket(dotenv.get("HOST"),Integer.parseInt(dotenv.get("PORT"))));
+            socket = new ChatClientSocket(new Socket(dotenv.get("HOST"), Integer.parseInt(dotenv.get("PORT"))));
             socket.startListening();
         } catch (Exception e) {
             showAlert("Error", "Cannot connect to server");

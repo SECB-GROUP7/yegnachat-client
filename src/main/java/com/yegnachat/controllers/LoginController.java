@@ -16,20 +16,13 @@ import java.net.Socket;
 
 public class LoginController {
 
-    @FXML
-    private BorderPane rootPane;
-    @FXML
-    private TextField usernameField;
-    @FXML
-    private PasswordField passwordField;
-    @FXML
-    private Button loginButton;
-    @FXML
-    private Hyperlink goToSignup;
-    @FXML
-    private TextField passwordVisibleField;
-    @FXML
-    private CheckBox showPasswordCheck;
+    @FXML private BorderPane rootPane;
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private Button loginButton;
+    @FXML private Hyperlink goToSignup;
+    @FXML private TextField passwordVisibleField;
+    @FXML private CheckBox showPasswordCheck;
 
     private ChatClientSocket socket;
 
@@ -37,19 +30,20 @@ public class LoginController {
     public void initialize() {
         Dotenv dotenv = Dotenv.load();
         try {
-            socket = new ChatClientSocket(new Socket(dotenv.get("HOST"), Integer.parseInt(dotenv.get("PORT"))));
+            socket = new ChatClientSocket(
+                    new Socket(dotenv.get("HOST"), Integer.parseInt(dotenv.get("PORT")))
+            );
             socket.startListening();
         } catch (Exception e) {
             showAlert("Error", "Cannot connect to server");
             return;
         }
-        // SHOW/HIDE password
+
         passwordVisibleField.textProperty().bindBidirectional(passwordField.textProperty());
 
-        showPasswordCheck.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
+        showPasswordCheck.selectedProperty().addListener((obs, o, isSelected) -> {
             passwordVisibleField.setVisible(isSelected);
             passwordVisibleField.setManaged(isSelected);
-
             passwordField.setVisible(!isSelected);
             passwordField.setManaged(!isSelected);
         });
@@ -61,17 +55,14 @@ public class LoginController {
     }
 
     private void login() {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
-
-        if (username.isBlank() || password.isBlank()) {
+        if (usernameField.getText().isBlank() || passwordField.getText().isBlank()) {
             showAlert("Error", "All fields required");
             return;
         }
 
         JsonObject payload = new JsonObject();
-        payload.addProperty("username", username);
-        payload.addProperty("password", password);
+        payload.addProperty("username", usernameField.getText());
+        payload.addProperty("password", passwordField.getText());
 
         JsonObject msg = new JsonObject();
         msg.addProperty("type", "login");
@@ -83,19 +74,19 @@ public class LoginController {
     private void handleServerMessage(JsonObject msg) {
         if (!"login_response".equals(msg.get("type").getAsString())) return;
 
-        JsonObject payload = msg.getAsJsonObject("payload");
-        String status = payload.get("status").getAsString();
+        JsonObject p = msg.getAsJsonObject("payload");
 
         Platform.runLater(() -> {
-            if ("ok".equals(status)) {
+            if ("ok".equals(p.get("status").getAsString())) {
                 Session.setAuth(
-                        payload.get("token").getAsString(),
-                        payload.get("user_id").getAsInt()
+                        p.get("token").getAsString(),
+                        p.get("user_id").getAsInt(),
+                        p.get("preferred_language_code").getAsString()
                 );
                 Session.setSocket(socket);
                 openChat();
             } else {
-                showAlert("Error", "Invalid username or password");
+                showAlert("Error", "Invalid credentials");
             }
         });
     }
@@ -103,19 +94,14 @@ public class LoginController {
     private void openChat() {
         try {
             Stage stage = (Stage) rootPane.getScene().getWindow();
+            BorderPane root = FXMLLoader.load(
+                    getClass().getResource("/com/yegnachat/client/chat.fxml")
+            );
 
-            FXMLLoader loader =
-                    new FXMLLoader(getClass().getResource("/com/yegnachat/client/chat.fxml"));
-
-            BorderPane root = loader.load();
-
-            // Load the scene
             Scene scene = new Scene(root);
-
             scene.getStylesheets().add(
                     getClass().getResource("/css/chat.css").toExternalForm()
             );
-
 
             stage.setScene(scene);
             stage.setTitle("YegnaChat");
@@ -124,13 +110,11 @@ public class LoginController {
         }
     }
 
-
     private void switchTo(String fxml) {
         try {
-            Stage stage = (Stage) rootPane.getScene().getWindow();
-            stage.getScene().setRoot(FXMLLoader.load(
-                    getClass().getResource("/com/yegnachat/client/" + fxml)
-            ));
+            rootPane.getScene().setRoot(
+                    FXMLLoader.load(getClass().getResource("/com/yegnachat/client/" + fxml))
+            );
         } catch (Exception e) {
             e.printStackTrace();
         }

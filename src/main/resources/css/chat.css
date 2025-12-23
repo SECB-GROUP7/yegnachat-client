@@ -18,3 +18,17 @@
 .text-area {
     -fx-font-family: "Noto Sans", "Noto Sans Ethiopic", "Noto Sans CJK", "System";
 }
+.bubble-mine {
+    -fx-background-color: #ADD8E6; /* light blue */
+    -fx-text-fill: black;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 12px;
+}
+
+/* Messages from others */
+.bubble-other {
+    -fx-background-color: #D3D3D3;
+    -fx-text-fill: black;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 12px;
+}
