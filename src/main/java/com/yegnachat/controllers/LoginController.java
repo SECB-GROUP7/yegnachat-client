@@ -10,6 +10,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 import java.net.Socket;
@@ -94,7 +95,7 @@ public class LoginController {
     private void openChat() {
         try {
             Stage stage = (Stage) rootPane.getScene().getWindow();
-            BorderPane root = FXMLLoader.load(
+            StackPane root = FXMLLoader.load(
                     getClass().getResource("/com/yegnachat/client/chat.fxml")
             );
 
@@ -109,6 +110,7 @@ public class LoginController {
             e.printStackTrace();
         }
     }
+
 
     private void switchTo(String fxml) {
         try {

@@ -1,0 +1,51 @@
+.settings-root {
+    -fx-background-color: #f8f9fa;
+}
+
+.settings-topbar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.settings-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.settings-username {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.settings-bio {
+    -fx-text-fill: #555;
+    -fx-text-alignment: center;
+}
+
+.section-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.primary-button {
+    -fx-background-color: #2196f3;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+}
+
+.secondary-button {
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #333;
+    -fx-background-radius: 6;
+}
+
+.danger-button {
+    -fx-background-color: #f44336;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+}
+
+.choice-box {
+    -fx-background-radius: 6;
+}

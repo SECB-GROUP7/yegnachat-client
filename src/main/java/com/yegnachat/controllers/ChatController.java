@@ -7,12 +7,17 @@ import com.yegnachat.session.Session;
 import com.yegnachat.util.TranslationService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.stage.Stage;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -30,8 +35,6 @@ public class ChatController {
     @FXML
     private TextField messageField;
     @FXML
-    private TextField searchField;
-    @FXML
     private Button sendButton;
     @FXML
     private Button translateButton;
@@ -43,6 +46,9 @@ public class ChatController {
     private Label chatSubtitle;
     @FXML
     private ImageView chatAvatar;
+    @FXML
+    private StackPane rootStack;
+    private SettingsController settingsController;
 
     /* ================= STATE ================= */
     private ChatClientSocket socket;
@@ -70,13 +76,12 @@ public class ChatController {
         if (socket == null) throw new IllegalStateException("Socket missing");
 
         translationService = new TranslationService();
-        //translationService.setTargetLanguage(Session.getPreferredLanguageCode());
 
         socket.setOnMessage(this::handleServerMessage);
 
         sendButton.setOnAction(e -> sendMessage());
         translateButton.setOnAction(e -> toggleTranslate());
-
+        settingsButton.setOnAction(e->openSettings());
         setAvatar(null);
         requestUserList();
     }
@@ -194,9 +199,18 @@ public class ChatController {
 
     /* ================= SERVER ================= */
     private void handleServerMessage(JsonObject msg) {
+        if (!Session.isLoggedIn()) {
+            System.out.println("[SERVER] Message ignored (not logged in)");
+            return;
+        }
         String type = msg.has("type") ? msg.get("type").getAsString() : "unknown";
-        System.out.println("[SERVER] Received message type: " + type);
 
+        if (settingsController != null) {
+            settingsController.handleServerMessage(
+                    type,
+                    msg.getAsJsonObject("payload")
+            );
+        }
         switch (type) {
 
             case "list_users_response" -> Platform.runLater(() -> {
@@ -269,6 +283,19 @@ public class ChatController {
                 chatHistory.add(new ChatMessage(senderId, senderName, avatarUrl, content));
                 renderMessages();
             });
+            case "logout_response" -> Platform.runLater(() -> {
+                JsonObject payload = msg.getAsJsonObject("payload");
+                if ("ok".equals(payload.get("status").getAsString())) {
+                    System.out.println("[LOGOUT] Server confirmed logout.");
+                    switchToLogin();
+                } else {
+                    System.out.println("[LOGOUT] Logout failed: " + payload);
+                    // Optionally show alert
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Logout failed on server.");
+                    alert.show();
+                }
+            });
+
 
             default -> System.out.println("[SERVER] Unknown message type: " + type);
         }
@@ -279,6 +306,13 @@ public class ChatController {
     private void toggleTranslate() {
         translateMode = !translateMode;
         System.out.println("[TRANSLATE] Translate mode: " + translateMode);
+        if(translateMode){
+            translateButton.setText("Orignal");
+            translateButton.setStyle("-fx-background-color: red; -fx-text-fill: white; -fx-background-radius: 6;");
+        }else{
+            translateButton.setText("Translate");
+            translateButton.setStyle("-fx-background-color: #0078d7; -fx-text-fill: white; -fx-background-radius: 6;");
+        }
         renderMessages();
     }
 
@@ -324,16 +358,21 @@ public class ChatController {
             if (!mine && translateMode) {
                 String originalText = m.content();
                 msgLabel.setText("translating...");
-                Platform.runLater(() -> {
-                    new Thread(() -> {
+
+                new Thread(() -> {
+                    try {
                         String translated = translationService.translate(
                                 originalText,
                                 Session.getPreferredLanguageCode()
                         );
                         Platform.runLater(() -> msgLabel.setText(translated));
-                    }).start();
-                });
+                    } catch (Exception e) {
+                        Platform.runLater(() -> msgLabel.setText(originalText)); // fallback
+                        System.out.println("[TRANSLATE ERROR] " + e.getMessage());
+                    }
+                }).start();
             }
+
         }
 
 
@@ -341,24 +380,89 @@ public class ChatController {
     }
 
 
+    private Parent settingsOverlay;
 
-    private void addMessageBubble(ChatMessage m, String text, boolean mine) {
-        Label msgLabel = new Label(text);
-        msgLabel.setWrapText(true);
-        msgLabel.setMaxWidth(420);
-        msgLabel.getStyleClass().add(mine ? "bubble-mine" : "bubble-other");
+    private void openSettings() {
+        try {
+            if (settingsOverlay != null) return;
 
-        ImageView avatar = new ImageView(loadAvatar(m.avatarUrl()));
-        avatar.setFitWidth(28);
-        avatar.setFitHeight(28);
-        avatar.setPreserveRatio(true);
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/yegnachat/client/settings.fxml")
+            );
 
-        HBox row = new HBox(10);
-        row.setStyle(mine ? "-fx-alignment: center-right;" : "-fx-alignment: center-left;");
+            Parent overlay = loader.load();
+            settingsOverlay = overlay;
 
-        if (mine) row.getChildren().addAll(msgLabel, avatar);
-        else row.getChildren().addAll(avatar, msgLabel);
+            // Load CSS
+            overlay.getStylesheets().add(
+                    getClass().getResource("/css/settings.css").toExternalForm()
+            );
 
-        messagesBox.getChildren().add(row);
+            SettingsController controller = loader.getController();
+            controller.setCloseCallback(this::closeSettings);
+            controller.setLogoutCallback(this::handleLogout);
+            controller.setSocket(socket);
+
+            this.settingsController = controller;
+
+            overlay.setPickOnBounds(false);
+            rootStack.getChildren().add(overlay);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
+
+    private void closeSettings() {
+        if (settingsOverlay != null) {
+            rootStack.getChildren().remove(settingsOverlay);
+            settingsOverlay = null;
+            settingsController = null;
+            socket.setOnMessage(this::handleServerMessage); // restore
+        }
+    }
+
+    private void handleLogout() {
+            System.out.println("[LOGOUT] Sending logout request to server...");
+
+            // Build logout message
+            JsonObject msg = new JsonObject();
+            msg.addProperty("type", "logout");
+            msg.add("payload", new JsonObject());
+
+            // Send to server
+            socket.send(msg);
+
+            // switch to login
+        Platform.runLater(this::switchToLogin);
+    }
+    private void switchToLogin() {
+        try {
+            Session.clear();
+
+            Stage oldStage = (Stage) rootStack.getScene().getWindow();
+            oldStage.hide();
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/yegnachat/client/login.fxml")
+            );
+            Scene scene = new Scene(loader.load());
+
+            Stage newStage = new Stage();
+            newStage.setScene(scene);
+            newStage.setTitle("Login");
+            newStage.show();
+
+            System.out.println("[LOGOUT] Fresh stage launched.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
 }

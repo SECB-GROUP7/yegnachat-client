@@ -24,6 +24,10 @@ public final class Session {
     public static boolean isLoggedIn() { return token != null; }
     public static String getPreferredLanguageCode() { return preferredLanguageCode; }
 
+    public static void setPreferredLanguageCode(String preferredLanguageCode) {
+        Session.preferredLanguageCode = preferredLanguageCode;
+    }
+
     // SOCKET
     public static void setSocket(ChatClientSocket s) { socket = s; }
     public static ChatClientSocket getSocket() { return socket; }

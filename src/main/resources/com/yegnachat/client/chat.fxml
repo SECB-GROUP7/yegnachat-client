@@ -4,134 +4,89 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<StackPane fx:id="rootStack" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.yegnachat.controllers.ChatController">
+<BorderPane prefHeight="700" prefWidth="1100" fx:id="mainPane">
 
-<BorderPane prefHeight="700" prefWidth="1100"
-            xmlns="http://javafx.com/javafx/17.0.12"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.yegnachat.controllers.ChatController">
+    <!-- LEFT USER LIST -->
+    <left>
+        <VBox prefWidth="280" style="-fx-background-color: #f4f6fa;">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <padding>
+                    <Insets bottom="10" left="15" right="10" top="10" />
+                </padding>
+                <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Chats" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button fx:id="settingsButton" style="-fx-background-color: transparent;">
+                    <graphic>
+                        <ImageView fitHeight="28" fitWidth="28" preserveRatio="true">
+                            <Image url="@../../../icons/settings.png" />
+                        </ImageView>
+                    </graphic>
+                </Button>
+                <Button fx:id="newChatButton" style="-fx-background-color: transparent;">
+                    <graphic>
+                        <ImageView fitWidth="28" fitHeight="28" preserveRatio="true">
+                            <Image url="@../../../icons/plus.png"/>
+                        </ImageView>
+                    </graphic>
+                </Button>
+            </HBox>
 
-    <!-- ================= CENTER ================= -->
-    <center>
-        <HBox>
-
-            <SplitPane dividerPositions="0.28" HBox.hgrow="ALWAYS">
-
-                <!-- ========= LEFT CHAT LIST ========= -->
-                <VBox prefWidth="300">
-
-                    <HBox>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background-insets: 0;" VBox.vgrow="ALWAYS">
+                <content>
+                    <VBox fx:id="chatListBox" spacing="8">
                         <padding>
                             <Insets bottom="10" left="10" right="10" top="10" />
                         </padding>
-                        <TextField fx:id="searchField" promptText="Search" />
-                    </HBox>
-
-                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
-                        <content>
-                            <VBox fx:id="chatListBox" spacing="6">
-                                <padding>
-                                    <Insets bottom="8" left="8" right="8" top="8" />
-                                </padding>
-                            </VBox>
-                        </content>
-                    </ScrollPane>
-
-                </VBox>
-
-                <!-- ========= CHAT AREA ========= -->
-                <BorderPane>
-
-                    <!-- Header -->
-                    <top>
-                        <HBox spacing="10">
-                            <padding>
-                                <Insets bottom="10" left="15" right="15" top="10" />
-                            </padding>
-
-                            <ImageView fx:id="chatAvatar"
-                                       fitHeight="40"
-                                       fitWidth="40"
-                                       preserveRatio="true" />
-
-                            <VBox>
-                                <Label fx:id="chatTitle" text="Select a chat">
-                                    <font>
-                                        <Font name="System Bold" size="15" />
-                                    </font>
-                                </Label>
-                                <Label fx:id="chatSubtitle"
-                                       style="-fx-text-fill: gray;"
-                                       text="" />
-                            </VBox>
-
-                            <Region HBox.hgrow="ALWAYS" />
-                        </HBox>
-                    </top>
-
-                    <!-- Messages -->
-                    <center>
-                        <ScrollPane fx:id="messagesScroll" fitToWidth="true">
-                            <content>
-                                <VBox fx:id="messagesBox" spacing="8">
-                                    <padding>
-                                        <Insets bottom="12" left="12" right="12" top="12" />
-                                    </padding>
-                                </VBox>
-                            </content>
-                        </ScrollPane>
-                    </center>
-
-                    <!-- Input -->
-                    <bottom>
-                        <HBox spacing="10">
-                            <padding>
-                                <Insets bottom="10" left="15" right="15" top="10" />
-                            </padding>
-                            <Button fx:id="translateButton"
-                                    text="ET" onAction="#toggleTranslate"/>
-
-                            <TextField fx:id="messageField"
-                                       promptText="Type a message..."
-                                       HBox.hgrow="ALWAYS" />
-
-                            <Button fx:id="sendButton"
-                                    text="Send"
-                                    />
-                        </HBox>
-                    </bottom>
-
-                </BorderPane>
-
-            </SplitPane>
-
-        </HBox>
-    </center>
-
-    <!-- ================= LEFT ICON BAR ================= -->
-    <left>
-        <VBox prefWidth="60" BorderPane.alignment="CENTER">
-
-            <Region VBox.vgrow="ALWAYS" />
-
-            <Button fx:id="settingsButton"
-                    style="-fx-background-color: transparent;">
-                <graphic>
-                    <ImageView fitHeight="36"
-                               fitWidth="36"
-                               preserveRatio="true">
-                        <Image url="@../../../icons/settings.png"/>
-                    </ImageView>
-                </graphic>
-                <VBox.margin>
-                    <Insets bottom="15" />
-                </VBox.margin>
-                <tooltip>
-                    <Tooltip text="Settings" />
-                </tooltip>
-            </Button>
-
+                    </VBox>
+                </content>
+            </ScrollPane>
         </VBox>
     </left>
 
+    <!-- CHAT AREA -->
+    <center>
+        <BorderPane>
+            <!-- HEADER -->
+            <top>
+                <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: #ffffff; -fx-border-color: #e0e0e0; -fx-border-width: 0 0 1 0;">
+                    <padding>
+                        <Insets bottom="12" left="15" right="15" top="12" />
+                    </padding>
+                    <ImageView fx:id="chatAvatar" fitHeight="48" fitWidth="48" preserveRatio="true" style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 4,0,0,1);" />
+                    <VBox spacing="2">
+                        <Label fx:id="chatTitle" style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Select a chat" />
+                        <Label fx:id="chatSubtitle" style="-fx-text-fill: #888888; -fx-font-size: 12px;" text="" />
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS" />
+                </HBox>
+            </top>
+
+            <!-- MESSAGES -->
+            <center>
+                <ScrollPane fx:id="messagesScroll" fitToWidth="true" style="-fx-background-color: #f8f9fb;">
+                    <content>
+                        <VBox fx:id="messagesBox" spacing="10">
+                            <padding>
+                                <Insets bottom="15" left="15" right="15" top="15" />
+                            </padding>
+                        </VBox>
+                    </content>
+                </ScrollPane>
+            </center>
+
+            <!-- INPUT -->
+            <bottom>
+                <HBox spacing="10" style="-fx-background-color: #ffffff; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;">
+                    <padding>
+                        <Insets bottom="12" left="15" right="15" top="12" />
+                    </padding>
+                    <Button fx:id="translateButton" style="-fx-background-color: #0078d7; -fx-text-fill: white; -fx-background-radius: 6;" text="Translate" />
+                    <TextField fx:id="messageField" promptText="Type a message..." styleClass="chat-input" HBox.hgrow="ALWAYS" />
+                    <Button fx:id="sendButton" style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-background-radius: 6;" text="Send" />
+                </HBox>
+            </bottom>
+        </BorderPane>
+    </center>
 </BorderPane>
+</StackPane>

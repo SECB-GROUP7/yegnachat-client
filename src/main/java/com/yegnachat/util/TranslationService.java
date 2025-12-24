@@ -20,26 +20,6 @@ public class TranslationService {
             .followRedirects(HttpClient.Redirect.ALWAYS)
             .build();
 
-    private boolean translateMode = false;
-    private String targetLanguageCode = "en";
-
-    public void toggleMode() {
-        translateMode = !translateMode;
-    }
-
-    public boolean isTranslateMode() {
-        return translateMode;
-    }
-
-    public void setTargetLanguage(String langCode) {
-        if (langCode != null && !langCode.isBlank()) {
-            targetLanguageCode = langCode;
-        }
-    }
-
-    public String getTargetLanguage() {
-        return targetLanguageCode;
-    }
 
     public String translate(String text, String targetLanguageCode) {
         if (text == null || text.isBlank()) return text;

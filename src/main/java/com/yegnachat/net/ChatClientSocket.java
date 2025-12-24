@@ -53,7 +53,7 @@ public class ChatClientSocket {
         this.onMessage = handler;
     }
 
-    private void close() {
+    public void close() {
         try { reader.close(); } catch (Exception ignored) {}
         try { writer.close(); } catch (Exception ignored) {}
         try { socket.close(); } catch (Exception ignored) {}

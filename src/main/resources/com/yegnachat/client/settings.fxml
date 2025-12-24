@@ -1,69 +1,100 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.Circle?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.shape.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17"
+<BorderPane prefHeight="600" prefWidth="400"
+            styleClass="settings-root"
+            xmlns="http://javafx.com/javafx/17.0.12"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.yegnachat.controllers.SettingsController"
-            prefWidth="350"
-            prefHeight="450"
-            style="-fx-background-color: #ffffff;">
+            fx:controller="com.yegnachat.controllers.SettingsController">
 
-    <!-- Top bar -->
+    <!-- TOP BAR -->
     <top>
-    <HBox>
-        <padding>
-            <Insets top="10" right="10" bottom="10" left="10"/>
-        </padding>
-
-        <Region HBox.hgrow="ALWAYS"/>
-
-        <Button fx:id="logoutButton" style="-fx-background-color: transparent;">
-            <graphic>
-                <ImageView fitWidth="25" fitHeight="25" pickOnBounds="true" preserveRatio="true">
-                    <Image url="@../../../icons/logout.png"/>
-                </ImageView>
-            </graphic>
-        </Button>
-        <Button fx:id="closeButton" style="-fx-background-color: transparent;">
-            <graphic>
-                <ImageView fitWidth="20" fitHeight="20" pickOnBounds="true" preserveRatio="true">
-                    <Image url="@../../../icons/close.png"/>
-                </ImageView>
-            </graphic>
-        </Button>
-
-    </HBox>
-    </top>
-    <!-- Content -->
-    <center>
-        <VBox alignment="TOP_CENTER" spacing="12">
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="settings-topbar">
             <padding>
-                <Insets top="20"/>
+                <Insets bottom="10" left="10" right="10" top="10"/>
             </padding>
 
-            <ImageView fx:id="avatarImage" fitHeight="100" fitWidth="100" preserveRatio="true">
-                <clip>
-                    <Circle centerX="50" centerY="50" radius="50"/>
-                </clip>
-            </ImageView>
+            <Label text="Settings" styleClass="settings-title"/>
 
-            <Label fx:id="usernameLabel" text="Username">
-                <font>
-                    <Font name="System Bold" size="16"/>
-                </font>
-            </Label>
+            <Region HBox.hgrow="ALWAYS"/>
 
-            <Label fx:id="bioLabel" text="Bio goes here" wrapText="true" style="-fx-text-fill: gray;"/>
+            <Button fx:id="closeButton" styleClass="icon-button">
+                <graphic>
+                    <ImageView fitHeight="20" fitWidth="20" preserveRatio="true">
+                        <Image url="@../../../icons/close.png"/>
+                    </ImageView>
+                </graphic>
+            </Button>
+        </HBox>
+    </top>
 
-            <!-- Edit Bio Button -->
-            <Button fx:id="editBioButton" text="Edit Bio" style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-background-radius: 5;"/>
-        </VBox>
+    <!-- CONTENT -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="settings-scroll">
+            <content>
+                <VBox spacing="25">
+                    <padding>
+                        <Insets bottom="20" left="20" right="20" top="20"/>
+                    </padding>
+
+                    <!-- PROFILE -->
+                    <VBox alignment="CENTER" spacing="10">
+                        <ImageView fx:id="avatarImage" fitHeight="120" fitWidth="120" preserveRatio="true">
+                            <clip>
+                                <Circle centerX="60" centerY="60" radius="60"/>
+                            </clip>
+                        </ImageView>
+
+                        <Label fx:id="usernameLabel"
+                               text="Username"
+                               styleClass="settings-username"/>
+
+                        <Label fx:id="bioLabel"
+                               text="This is your bio"
+                               wrapText="true"
+                               styleClass="settings-bio"/>
+
+                        <Button fx:id="editBioButton"
+                                text="Edit Bio"
+                                styleClass="primary-button"/>
+                    </VBox>
+
+                    <Separator/>
+
+                    <!-- PREFERRED LANGUAGE -->
+                    <VBox spacing="10">
+                        <Label text="Preferred Language" styleClass="section-title"/>
+                        <TextField fx:id="languageField"
+                                   promptText="en / am"/>
+
+                        <Button fx:id="saveLanguageButton"
+                                text="Save Language"
+                                styleClass="secondary-button"/>
+                    </VBox>
+
+                    <Separator/>
+
+                    <!-- ACCOUNT -->
+                    <VBox spacing="12">
+                        <Label text="Account" styleClass="section-title"/>
+
+                        <Button fx:id="changePasswordButton"
+                                text="Change Password"
+                                styleClass="secondary-button"/>
+
+                        <Button fx:id="logoutButton"
+                                text="Logout"
+                                styleClass="danger-button"/>
+                    </VBox>
+
+                </VBox>
+            </content>
+        </ScrollPane>
     </center>
 
 </BorderPane>
