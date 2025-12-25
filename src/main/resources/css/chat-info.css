@@ -1,0 +1,31 @@
+.info-panel {
+    -fx-background-color: white;
+    -fx-border-color: #333;
+    -fx-border-width: 1;
+}
+
+.info-header {
+    -fx-background-color: #2a2a2a;
+}
+
+.info-title {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.info-username {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.info-bio {
+    -fx-text-fill: #bbbbbb;
+    -fx-font-size: 12px;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cccccc;
+}

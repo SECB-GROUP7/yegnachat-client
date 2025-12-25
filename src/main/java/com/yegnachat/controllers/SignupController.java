@@ -37,6 +37,10 @@ public class SignupController {
             showAlert("Error", "Cannot connect to server");
             return;
         }
+        rootPane.getStylesheets().add(
+                getClass().getResource("/css/signup.css").toExternalForm()
+        );
+
 
         socket.setOnMessage(this::handleServerMessage);
 

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<VBox prefWidth="340"
+      styleClass="info-panel"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yegnachat.controllers.GroupInfoController"
+      fx:id="root">
+
+    <!-- HEADER -->
+    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="info-header">
+        <padding>
+            <Insets top="12" right="12" bottom="12" left="12"/>
+        </padding>
+
+        <Label text="Group Info" styleClass="info-title"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Button fx:id="closeButton" styleClass="icon-button">
+            ✕
+        </Button>
+    </HBox>
+
+    <!-- CONTENT -->
+    <VBox spacing="14">
+        <padding>
+            <Insets top="20" right="20" bottom="20" left="20"/>
+        </padding>
+
+        <!-- GROUP HEADER -->
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <ImageView fx:id="groupAvatar"
+                       fitWidth="70"
+                       fitHeight="70"
+                       preserveRatio="true">
+                <clip>
+                    <Circle centerX="35" centerY="35" radius="35"/>
+                </clip>
+            </ImageView>
+
+            <VBox spacing="4">
+                <Label fx:id="groupNameLabel"
+                       text="Group Name"
+                       styleClass="info-username"/>
+                <Label fx:id="groupAboutLabel"
+                       text="Group description"
+                       wrapText="true"
+                       styleClass="info-bio"/>
+            </VBox>
+        </HBox>
+
+        <Separator/>
+
+        <!-- MEMBERS -->
+        <Label text="Members" styleClass="section-title"/>
+
+        <ScrollPane fitToWidth="true" prefHeight="220">
+            <content>
+                <VBox fx:id="membersBox" spacing="8"/>
+            </content>
+        </ScrollPane>
+
+        <Separator/>
+
+        <!-- ACTIONS -->
+        <Button fx:id="addMemberButton"
+                text="Add Members"
+                styleClass="primary-button"/>
+
+        <Button fx:id="leaveGroupButton"
+                text="Leave Group"
+                styleClass="danger-button"/>
+    </VBox>
+</VBox>

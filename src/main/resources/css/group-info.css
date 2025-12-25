@@ -1,0 +1,36 @@
+.info-panel {
+    -fx-background-color: white;
+    -fx-border-color: #333;
+}
+
+.section-title {
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.primary-button {
+    -fx-background-color: #0078d7;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+}
+
+.danger-button {
+    -fx-background-color: #c0392b;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+}
+
+.info-header {
+    -fx-background-color: #2a2a2a;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cccccc;
+}
+.info-title {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}

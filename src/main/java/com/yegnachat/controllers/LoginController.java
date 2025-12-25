@@ -3,6 +3,7 @@ package com.yegnachat.controllers;
 import com.google.gson.JsonObject;
 import com.yegnachat.net.ChatClientSocket;
 import com.yegnachat.session.Session;
+import com.yegnachat.util.TokenStorage;
 import io.github.cdimascio.dotenv.Dotenv;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -17,13 +18,20 @@ import java.net.Socket;
 
 public class LoginController {
 
-    @FXML private BorderPane rootPane;
-    @FXML private TextField usernameField;
-    @FXML private PasswordField passwordField;
-    @FXML private Button loginButton;
-    @FXML private Hyperlink goToSignup;
-    @FXML private TextField passwordVisibleField;
-    @FXML private CheckBox showPasswordCheck;
+    @FXML
+    private BorderPane rootPane;
+    @FXML
+    private TextField usernameField;
+    @FXML
+    private PasswordField passwordField;
+    @FXML
+    private Button loginButton;
+    @FXML
+    private Hyperlink goToSignup;
+    @FXML
+    private TextField passwordVisibleField;
+    @FXML
+    private CheckBox showPasswordCheck;
 
     private ChatClientSocket socket;
 
@@ -39,6 +47,9 @@ public class LoginController {
             showAlert("Error", "Cannot connect to server");
             return;
         }
+        rootPane.getStylesheets().add(
+                getClass().getResource("/css/login.css").toExternalForm()
+        );
 
         passwordVisibleField.textProperty().bindBidirectional(passwordField.textProperty());
 
@@ -51,9 +62,31 @@ public class LoginController {
 
         socket.setOnMessage(this::handleServerMessage);
 
+        // Try loading Session
+        loadSession();
+
         loginButton.setOnAction(e -> login());
         goToSignup.setOnAction(e -> switchTo("signup.fxml"));
     }
+
+    private void loadSession() {
+        String token = TokenStorage.loadToken();
+        if (token == null) {
+            System.out.println("[LOGIN] No saved token found");
+            return;
+        }
+
+        JsonObject payload = new JsonObject();
+        payload.addProperty("token", token);
+
+        JsonObject msg = new JsonObject();
+        msg.addProperty("type", "get_session");
+        msg.add("payload", payload);
+
+        socket.send(msg);
+        System.out.println("[LOGIN] Sent get_session with saved token");
+    }
+
 
     private void login() {
         if (usernameField.getText().isBlank() || passwordField.getText().isBlank()) {
@@ -73,7 +106,10 @@ public class LoginController {
     }
 
     private void handleServerMessage(JsonObject msg) {
-        if (!"login_response".equals(msg.get("type").getAsString())) return;
+        String type = msg.get("type").getAsString();
+        if (!type.equals("login_response") && !type.equals("get_session_response")) {
+            return;
+        }
 
         JsonObject p = msg.getAsJsonObject("payload");
 
@@ -84,7 +120,13 @@ public class LoginController {
                         p.get("user_id").getAsInt(),
                         p.get("preferred_language_code").getAsString()
                 );
+                // Set sesion socket
                 Session.setSocket(socket);
+                // Save token to storage only if it is a login response!
+                if (type.equals("login_response")) {
+                    TokenStorage.saveToken(p.get("token").getAsString());
+                    System.out.println("[LOGIN] Saved token"+p.get("token").getAsString());
+                }
                 openChat();
             } else {
                 showAlert("Error", "Invalid credentials");

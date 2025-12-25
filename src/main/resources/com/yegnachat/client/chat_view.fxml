@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<VBox prefWidth="320"
+      styleClass="info-panel"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.yegnachat.controllers.ChatInfoController" fx:id="root">
+
+    <!-- HEADER -->
+    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="info-header">
+        <padding>
+            <Insets top="12" right="12" bottom="12" left="12"/>
+        </padding>
+
+        <Label text="Chat Info" styleClass="info-title"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Button fx:id="closeButton" styleClass="icon-button">
+            ✕
+        </Button>
+    </HBox>
+
+    <!-- CONTENT -->
+    <VBox alignment="CENTER" spacing="12">
+        <padding>
+            <Insets top="20" right="20" bottom="20" left="20"/>
+        </padding>
+
+        <ImageView fx:id="avatarImage"
+                   fitWidth="100"
+                   fitHeight="100"
+                   preserveRatio="true">
+            <clip>
+                <Circle centerX="50" centerY="50" radius="50"/>
+            </clip>
+        </ImageView>
+
+        <Label fx:id="usernameLabel"
+               text="Username"
+               styleClass="info-username"/>
+
+        <Label fx:id="bioLabel"
+               text="User bio goes here"
+               wrapText="true"
+               styleClass="info-bio"/>
+
+        <Separator/>
+    </VBox>
+</VBox>

@@ -48,6 +48,8 @@ public class ChatController {
     private ImageView chatAvatar;
     @FXML
     private StackPane rootStack;
+    @FXML
+    private HBox titleHbox;
     private SettingsController settingsController;
 
     /* ================= STATE ================= */
@@ -84,6 +86,14 @@ public class ChatController {
         settingsButton.setOnAction(e->openSettings());
         setAvatar(null);
         requestUserList();
+
+        titleHbox.setOnMouseClicked(e -> {
+            if(activeChatIsGroup)
+                openGroupInfo(activeChatId, chatTitle.getText(), "Group description here");
+            else
+                openChatInfo(activeChatId, chatTitle.getText(), "User bio here", "avatar.png");
+        });
+
     }
 
     /* ================= AVATAR ================= */
@@ -296,7 +306,6 @@ public class ChatController {
                 }
             });
 
-
             default -> System.out.println("[SERVER] Unknown message type: " + type);
         }
     }
@@ -392,7 +401,6 @@ public class ChatController {
 
             Parent overlay = loader.load();
             settingsOverlay = overlay;
-
             // Load CSS
             overlay.getStylesheets().add(
                     getClass().getResource("/css/settings.css").toExternalForm()
@@ -460,9 +468,70 @@ public class ChatController {
             e.printStackTrace();
         }
     }
+    private Parent chatInfoOverlay;
 
+    private void openChatInfo(int userId, String username, String bio, String avatarUrl) {
+        try {
+            if (chatInfoOverlay != null) return;
 
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/yegnachat/client/chat_view.fxml")
+            );
+            Parent overlay = loader.load();
+            ChatInfoController controller = loader.getController();
 
+            controller.setUsername(username);
+            controller.setBio(bio);
+            controller.setAvatar(new ImageView(loadAvatar(avatarUrl)));
+            controller.setCloseCallback(this::closeChatInfo);
 
+            chatInfoOverlay = overlay;
+            overlay.setPickOnBounds(false);
+            rootStack.getChildren().add(overlay);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeChatInfo() {
+        if (chatInfoOverlay != null) {
+            rootStack.getChildren().remove(chatInfoOverlay);
+            chatInfoOverlay = null;
+        }
+    }
+
+    private Parent groupInfoOverlay;
+
+    private void openGroupInfo(int groupId, String groupName, String groupAbout) {
+        try {
+            if (groupInfoOverlay != null) return;
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/yegnachat/client/group_view.fxml")
+            );
+            Parent overlay = loader.load();
+            GroupInfoController controller = loader.getController();
+
+            controller.setCloseCallback(this::closeGroupInfo);
+            controller.groupNameLabel.setText(groupName);
+            controller.groupAboutLabel.setText(groupAbout);
+            // You can populate membersBox dynamically later
+
+            groupInfoOverlay = overlay;
+            overlay.setPickOnBounds(false);
+            rootStack.getChildren().add(overlay);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeGroupInfo() {
+        if (groupInfoOverlay != null) {
+            rootStack.getChildren().remove(groupInfoOverlay);
+            groupInfoOverlay = null;
+        }
+    }
 
 }
