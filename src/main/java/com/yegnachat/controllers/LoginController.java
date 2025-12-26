@@ -38,14 +38,21 @@ public class LoginController {
     @FXML
     public void initialize() {
         Dotenv dotenv = Dotenv.load();
-        try {
-            socket = new ChatClientSocket(
-                    new Socket(dotenv.get("HOST"), Integer.parseInt(dotenv.get("PORT")))
-            );
-            socket.startListening();
-        } catch (Exception e) {
-            showAlert("Error", "Cannot connect to server");
-            return;
+        if (Session.getSocket() == null) {
+
+            try {
+                socket = new ChatClientSocket(
+                        new Socket(dotenv.get("HOST"), Integer.parseInt(dotenv.get("PORT")))
+                );
+                socket.startListening();
+                Session.setSocket(socket);
+            } catch (Exception e) {
+                showAlert("Error", "Cannot connect to server");
+                return;
+            }
+        }else{
+            // If socket exists in session set it to the current screen
+            socket = Session.getSocket();
         }
         rootPane.getStylesheets().add(
                 getClass().getResource("/css/login.css").toExternalForm()
@@ -125,7 +132,7 @@ public class LoginController {
                 // Save token to storage only if it is a login response!
                 if (type.equals("login_response")) {
                     TokenStorage.saveToken(p.get("token").getAsString());
-                    System.out.println("[LOGIN] Saved token"+p.get("token").getAsString());
+                    System.out.println("[LOGIN] Saved token" + p.get("token").getAsString());
                 }
                 openChat();
             } else {

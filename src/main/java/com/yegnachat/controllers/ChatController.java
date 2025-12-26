@@ -83,12 +83,12 @@ public class ChatController {
 
         sendButton.setOnAction(e -> sendMessage());
         translateButton.setOnAction(e -> toggleTranslate());
-        settingsButton.setOnAction(e->openSettings());
+        settingsButton.setOnAction(e -> openSettings());
         setAvatar(null);
         requestUserList();
 
         titleHbox.setOnMouseClicked(e -> {
-            if(activeChatIsGroup)
+            if (activeChatIsGroup)
                 openGroupInfo(activeChatId, chatTitle.getText(), "Group description here");
             else
                 openChatInfo(activeChatId, chatTitle.getText(), "User bio here", "avatar.png");
@@ -206,7 +206,6 @@ public class ChatController {
     }
 
 
-
     /* ================= SERVER ================= */
     private void handleServerMessage(JsonObject msg) {
         if (!Session.isLoggedIn()) {
@@ -315,10 +314,10 @@ public class ChatController {
     private void toggleTranslate() {
         translateMode = !translateMode;
         System.out.println("[TRANSLATE] Translate mode: " + translateMode);
-        if(translateMode){
+        if (translateMode) {
             translateButton.setText("Orignal");
             translateButton.setStyle("-fx-background-color: red; -fx-text-fill: white; -fx-background-radius: 6;");
-        }else{
+        } else {
             translateButton.setText("Translate");
             translateButton.setStyle("-fx-background-color: #0078d7; -fx-text-fill: white; -fx-background-radius: 6;");
         }
@@ -432,19 +431,20 @@ public class ChatController {
     }
 
     private void handleLogout() {
-            System.out.println("[LOGOUT] Sending logout request to server...");
+        System.out.println("[LOGOUT] Sending logout request to server...");
 
-            // Build logout message
-            JsonObject msg = new JsonObject();
-            msg.addProperty("type", "logout");
-            msg.add("payload", new JsonObject());
+        // Build logout message
+        JsonObject msg = new JsonObject();
+        msg.addProperty("type", "logout");
+        msg.add("payload", new JsonObject());
 
-            // Send to server
-            socket.send(msg);
+        // Send to server
+        socket.send(msg);
 
-            // switch to login
+        // switch to login
         Platform.runLater(this::switchToLogin);
     }
+
     private void switchToLogin() {
         try {
             Session.clear();
@@ -468,6 +468,7 @@ public class ChatController {
             e.printStackTrace();
         }
     }
+
     private Parent chatInfoOverlay;
 
     private void openChatInfo(int userId, String username, String bio, String avatarUrl) {

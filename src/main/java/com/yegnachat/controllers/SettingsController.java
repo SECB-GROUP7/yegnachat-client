@@ -79,40 +79,53 @@ public class SettingsController {
             case "get_user_response" -> {
                 if ("ok".equals(payload.get("status").getAsString())) {
                     JsonObject user = payload.getAsJsonObject("user");
-                    usernameLabel.setText(user.get("username").getAsString());
-                    bioLabel.setText(user.get("bio").getAsString());
 
-                    String avatarUrl = user.has("avatar_url")
-                            ? user.get("avatar_url").getAsString()
-                            : "";
+                    Platform.runLater(() -> {
+                        usernameLabel.setText(user.get("username").getAsString());
+                        bioLabel.setText(user.get("bio").getAsString());
 
-                    setAvatar(avatarUrl);
+                        String avatarUrl = user.has("avatar_url")
+                                ? user.get("avatar_url").getAsString()
+                                : "";
+
+                        setAvatar(avatarUrl);
+                    });
                 }
             }
 
+
             case "get_preferred_language_response" -> {
                 if ("ok".equals(payload.get("status").getAsString())) {
-                    languageField.setText(
-                            payload.get("preferred_language_code").getAsString()
-                    );
+                    Platform.runLater(()->{
+                        languageField.setText(
+                                payload.get("preferred_language_code").getAsString()
+                        );
+                    });
+
                 }
             }
 
             case "set_preferred_language_response" -> {
                 if ("ok".equals(payload.get("status").getAsString())) {
-                    String code = payload.get("preferred_language_code").getAsString();
-                    languageField.setText(code);
-                    Session.setPreferredLanguageCode(code);
+                    Platform.runLater(()->{
+                        String code = payload.get("preferred_language_code").getAsString();
+                        languageField.setText(code);
+                        Session.setPreferredLanguageCode(code);
+                    });
+
                 }
             }
 
             case "set_password_response" -> {
-                showInfo(
-                        "ok".equals(payload.get("status").getAsString())
-                                ? "Success"
-                                : "Error",
-                        "Password update result received"
-                );
+                Platform.runLater(()->{
+                    showInfo(
+                            "ok".equals(payload.get("status").getAsString())
+                                    ? "Success"
+                                    : "Error",
+                            "Password update result received"
+                    );
+                });
+
             }
         }
     }

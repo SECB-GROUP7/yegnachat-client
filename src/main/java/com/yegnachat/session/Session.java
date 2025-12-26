@@ -9,8 +9,6 @@ public final class Session {
     private static ChatClientSocket socket;
     private static String preferredLanguageCode = "en";
 
-    private Session() {}
-
     // AUTH
     public static void setAuth(String token, int userId, String preferredLang) {
         Session.token = token;

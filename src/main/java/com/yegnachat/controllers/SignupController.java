@@ -2,6 +2,7 @@ package com.yegnachat.controllers;
 
 import com.google.gson.JsonObject;
 import com.yegnachat.net.ChatClientSocket;
+import com.yegnachat.session.Session;
 import io.github.cdimascio.dotenv.Dotenv;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -30,18 +31,14 @@ public class SignupController {
     @FXML
     public void initialize() {
         Dotenv dotenv = Dotenv.load();
-        try {
-            socket = new ChatClientSocket(new Socket(dotenv.get("HOST"), Integer.parseInt(dotenv.get("PORT"))));
-            socket.startListening();
-        } catch (Exception e) {
-            showAlert("Error", "Cannot connect to server");
-            return;
-        }
+
+
         rootPane.getStylesheets().add(
                 getClass().getResource("/css/signup.css").toExternalForm()
         );
 
-
+        // We never have to connect to socket here as it is not the first screen
+        socket = Session.getSocket();
         socket.setOnMessage(this::handleServerMessage);
 
         signupButton.setOnAction(e -> signup());

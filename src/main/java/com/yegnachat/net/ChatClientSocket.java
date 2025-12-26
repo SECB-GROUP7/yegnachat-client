@@ -12,25 +12,13 @@ public class ChatClientSocket {
     private final Socket socket;
     private final BufferedReader reader;
     private final BufferedWriter writer;
-    private final Gson gson = new Gson();
-
     private Consumer<JsonObject> onMessage;
+    private static final Gson gson = new Gson();
 
     public ChatClientSocket(Socket socket) throws IOException {
         this.socket = socket;
         this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-    }
-
-
-    public void send(JsonObject message) {
-        try {
-            writer.write(gson.toJson(message));
-            writer.newLine();
-            writer.flush();
-        } catch (IOException e) {
-            close();
-        }
     }
 
     public void startListening() {
@@ -53,9 +41,20 @@ public class ChatClientSocket {
         this.onMessage = handler;
     }
 
+    public void send(JsonObject message) {
+        try {
+            writer.write(gson.toJson(message));
+            writer.newLine();
+            writer.flush();
+        } catch (IOException e) {
+            close();
+        }
+    }
+
     public void close() {
-        try { reader.close(); } catch (Exception ignored) {}
-        try { writer.close(); } catch (Exception ignored) {}
-        try { socket.close(); } catch (Exception ignored) {}
+        try {
+            socket.close();
+        } catch (Exception ignored) {
+        }
     }
 }
