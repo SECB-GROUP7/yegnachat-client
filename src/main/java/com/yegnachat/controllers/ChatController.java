@@ -61,18 +61,17 @@ public class ChatController {
     private TranslationService translationService;
     private boolean translateMode = false;
 
-    private record ChatMessage(int senderId, String senderName, String avatarUrl, String content) {
+    private record ChatMessage(int senderId, String senderName, String avatarUrl, String content, String chatType,
+                               int chatId) {
     }
+
 
     /* ================= INIT ================= */
     @FXML
     public void initialize() {
         System.out.println("[INIT] Initializing ChatController...");
 
-        Font.loadFont(
-                getClass().getResourceAsStream("/fonts/NotoSansEthiopicVariable.ttf"),
-                14
-        );
+        Font.loadFont(getClass().getResourceAsStream("/fonts/NotoSansEthiopicVariable.ttf"), 14);
 
         socket = Session.getSocket();
         if (socket == null) throw new IllegalStateException("Socket missing");
@@ -88,10 +87,8 @@ public class ChatController {
         requestUserList();
 
         titleHbox.setOnMouseClicked(e -> {
-            if (activeChatIsGroup)
-                openGroupInfo(activeChatId, chatTitle.getText(), "Group description here");
-            else
-                openChatInfo(activeChatId, chatTitle.getText(), "User bio here", "avatar.png");
+            if (activeChatIsGroup) openGroupInfo(activeChatId, chatTitle.getText(), "Group description here");
+            else openChatInfo(activeChatId, chatTitle.getText(), "User bio here", "avatar.png");
         });
 
     }
@@ -160,13 +157,31 @@ public class ChatController {
         System.out.println("[REQUEST] Fetching history: " + type + " for id=" + id);
         JsonObject payload = new JsonObject();
         payload.addProperty("chat_type", type);
-        payload.addProperty(key, String.valueOf(id)); // <-- convert int to string
+        payload.addProperty(key, id);
 
         JsonObject msg = new JsonObject();
         msg.addProperty("type", "fetch_history");
         msg.add("payload", payload);
 
         socket.send(msg);
+    }
+    private void routeIncomingMessage(ChatMessage msg) {
+
+        // Ignore messages not belonging to active chat
+        if (activeChatId == null) return;
+
+        boolean sameChat =
+                msg.chatType().equals(activeChatIsGroup ? "group" : "private")
+                        && msg.chatId() == activeChatId;
+
+        if (!sameChat) {
+            System.out.println("[ROUTE] Message for inactive chat → ignored");
+            // TODO: store per-chat history
+            return;
+        }
+
+        chatHistory.add(msg);
+        renderMessages();
     }
 
 
@@ -187,17 +202,15 @@ public class ChatController {
         JsonObject payload = new JsonObject();
         payload.addProperty("content", content);
 
-        if (activeChatIsGroup)
-            payload.addProperty("group_id", String.valueOf(activeChatId));
-        else
-            payload.addProperty("receiver_id", String.valueOf(activeChatId));
+        if (activeChatIsGroup) payload.addProperty("group_id", String.valueOf(activeChatId));
+        else payload.addProperty("receiver_id", String.valueOf(activeChatId));
 
         JsonObject msg = new JsonObject();
         msg.addProperty("type", "send_message");
         msg.add("payload", payload);
-
-        chatHistory.add(new ChatMessage(Session.getUserId(), "Me", "", content));
-        renderMessages();
+//
+//        chatHistory.add(new ChatMessage(Session.getUserId(), "Me", "", content));
+//        renderMessages();
 
 
         socket.send(msg);
@@ -215,10 +228,7 @@ public class ChatController {
         String type = msg.has("type") ? msg.get("type").getAsString() : "unknown";
 
         if (settingsController != null) {
-            settingsController.handleServerMessage(
-                    type,
-                    msg.getAsJsonObject("payload")
-            );
+            settingsController.handleServerMessage(type, msg.getAsJsonObject("payload"));
         }
         switch (type) {
 
@@ -271,7 +281,15 @@ public class ChatController {
                         String content = o.get("content").getAsString();
                         System.out.println("[HISTORY] Message from " + senderName + ": " + content);
 
-                        chatHistory.add(new ChatMessage(senderId, senderName, avatarUrl, content));
+                        chatHistory.add(new ChatMessage(
+                                senderId,
+                                senderName,
+                                avatarUrl,
+                                content,
+                                activeChatIsGroup ? "group" : "private",
+                                activeChatId
+                        ));
+
                     }
                 }
 
@@ -279,19 +297,34 @@ public class ChatController {
             });
 
             case "send_message" -> Platform.runLater(() -> {
-                System.out.println("[SERVER] Handling incoming send_message...");
                 JsonObject p = msg.getAsJsonObject("payload");
 
+                String chatType = p.get("chat_type").getAsString();
+
                 int senderId = p.get("sender_id").getAsInt();
-                String senderName = p.get("sender_username").getAsString();
-                String avatarUrl = p.has("avatar_url") ? p.get("avatar_url").getAsString() : "";
-                String content = p.get("content").getAsString();
+                int receiverId = p.get("receiver_id").getAsInt();
 
-                System.out.println("[INCOMING] Message from " + senderName + ": " + content);
+                int chatId;
+                if (chatType.equals("group")) {
+                    chatId = (int) Double.parseDouble(p.get("group_id").getAsString());
+                } else {
+                    chatId = (senderId == Session.getUserId())
+                            ? receiverId
+                            : senderId;
+                }
 
-                chatHistory.add(new ChatMessage(senderId, senderName, avatarUrl, content));
-                renderMessages();
+                ChatMessage incoming = new ChatMessage(
+                        p.get("sender_id").getAsInt(),
+                        p.get("sender_username").getAsString(),
+                        p.has("avatar_url") ? p.get("avatar_url").getAsString() : "",
+                        p.get("content").getAsString(),
+                        chatType,
+                        chatId
+                );
+
+                routeIncomingMessage(incoming);
             });
+
             case "logout_response" -> Platform.runLater(() -> {
                 JsonObject payload = msg.getAsJsonObject("payload");
                 if ("ok".equals(payload.get("status").getAsString())) {
@@ -303,6 +336,9 @@ public class ChatController {
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Logout failed on server.");
                     alert.show();
                 }
+            });
+            case "error" -> Platform.runLater(() -> {
+                System.out.println("[SERVER ERROR] " + msg.get("payload"));
             });
 
             default -> System.out.println("[SERVER] Unknown message type: " + type);
@@ -334,11 +370,11 @@ public class ChatController {
         for (ChatMessage m : chatHistory) {
             boolean mine = m.senderId() == myId;
 
-            VBox messageContainer = new VBox(2); // small spacing between name and bubble
+            VBox messageContainer = new VBox(2);
 
             if (!mine && activeChatIsGroup) {
                 Label nameLabel = new Label(m.senderName());
-                nameLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #888888;"); // small & subtle
+                nameLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #888888;");
                 messageContainer.getChildren().add(nameLabel);
             }
 
@@ -346,8 +382,6 @@ public class ChatController {
             msgLabel.setWrapText(true);
             msgLabel.setMaxWidth(420);
             msgLabel.getStyleClass().add(mine ? "bubble-mine" : "bubble-other");
-
-            messageContainer.getChildren().add(msgLabel); // ✅ add message AFTER name
 
             ImageView avatar = new ImageView(loadAvatar(m.avatarUrl()));
             avatar.setFitWidth(28);
@@ -357,12 +391,17 @@ public class ChatController {
             HBox row = new HBox(10);
             row.setStyle(mine ? "-fx-alignment: center-right;" : "-fx-alignment: center-left;");
 
-            if (mine) row.getChildren().addAll(msgLabel, avatar); // mine: msg + avatar
-            else row.getChildren().addAll(avatar, messageContainer); // others: avatar + VBox(name+msg)
+            if (mine) {
+                // mine label goes directly into row
+                row.getChildren().addAll(msgLabel, avatar);
+            } else {
+                // others: label lives inside container
+                messageContainer.getChildren().add(msgLabel);
+                row.getChildren().addAll(avatar, messageContainer);
+            }
 
             messagesBox.getChildren().add(row);
 
-            // Translate asynchronously if needed
             if (!mine && translateMode) {
                 String originalText = m.content();
                 msgLabel.setText("translating...");
@@ -375,13 +414,12 @@ public class ChatController {
                         );
                         Platform.runLater(() -> msgLabel.setText(translated));
                     } catch (Exception e) {
-                        Platform.runLater(() -> msgLabel.setText(originalText)); // fallback
-                        System.out.println("[TRANSLATE ERROR] " + e.getMessage());
+                        Platform.runLater(() -> msgLabel.setText(originalText));
                     }
                 }).start();
             }
-
         }
+
 
 
         Platform.runLater(() -> messagesScroll.setVvalue(1));
@@ -394,16 +432,12 @@ public class ChatController {
         try {
             if (settingsOverlay != null) return;
 
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/yegnachat/client/settings.fxml")
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/settings.fxml"));
 
             Parent overlay = loader.load();
             settingsOverlay = overlay;
             // Load CSS
-            overlay.getStylesheets().add(
-                    getClass().getResource("/css/settings.css").toExternalForm()
-            );
+            overlay.getStylesheets().add(getClass().getResource("/css/settings.css").toExternalForm());
 
             SettingsController controller = loader.getController();
             controller.setCloseCallback(this::closeSettings);
@@ -452,9 +486,7 @@ public class ChatController {
             Stage oldStage = (Stage) rootStack.getScene().getWindow();
             oldStage.hide();
 
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/yegnachat/client/login.fxml")
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/login.fxml"));
             Scene scene = new Scene(loader.load());
 
             Stage newStage = new Stage();
@@ -475,9 +507,7 @@ public class ChatController {
         try {
             if (chatInfoOverlay != null) return;
 
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/yegnachat/client/chat_view.fxml")
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/chat_view.fxml"));
             Parent overlay = loader.load();
             ChatInfoController controller = loader.getController();
 
@@ -508,9 +538,7 @@ public class ChatController {
         try {
             if (groupInfoOverlay != null) return;
 
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/yegnachat/client/group_view.fxml")
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/group_view.fxml"));
             Parent overlay = loader.load();
             GroupInfoController controller = loader.getController();
 
