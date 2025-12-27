@@ -39,13 +39,10 @@ public class ChatInfoController {
         });
     }
 
-    /* ===== future hooks ===== */
-
     public void setCloseCallback(Runnable closeCallback) {
         this.closeCallback = closeCallback;
     }
 
-    // These will be used later when wiring backend
     public void setUsername(String username) {
         usernameLabel.setText(username);
     }

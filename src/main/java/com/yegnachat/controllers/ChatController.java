@@ -19,13 +19,13 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatController {
 
-    /* ================= FXML ================= */
     @FXML
     private VBox chatListBox;
     @FXML
@@ -50,9 +50,12 @@ public class ChatController {
     private StackPane rootStack;
     @FXML
     private HBox titleHbox;
+    @FXML
+    private Button newChatButton;
+
     private SettingsController settingsController;
 
-    /* ================= STATE ================= */
+    // STATE ATTRIBUTES
     private ChatClientSocket socket;
     private Integer activeChatId = null;
     private boolean activeChatIsGroup = false;
@@ -60,13 +63,17 @@ public class ChatController {
     private final List<ChatMessage> chatHistory = new ArrayList<>();
     private TranslationService translationService;
     private boolean translateMode = false;
+    private Integer pendingUserInfoRequest = null;
+    private Integer pendingGroupInfoRequest = null;
+    private VBox newChatResultsBox;
+    private TextField newChatSearchField;
+
 
     private record ChatMessage(int senderId, String senderName, String avatarUrl, String content, String chatType,
                                int chatId) {
     }
 
 
-    /* ================= INIT ================= */
     @FXML
     public void initialize() {
         System.out.println("[INIT] Initializing ChatController...");
@@ -87,13 +94,21 @@ public class ChatController {
         requestUserList();
 
         titleHbox.setOnMouseClicked(e -> {
-            if (activeChatIsGroup) openGroupInfo(activeChatId, chatTitle.getText(), "Group description here");
-            else openChatInfo(activeChatId, chatTitle.getText(), "User bio here", "avatar.png");
+            if (activeChatIsGroup) {
+                openGroupInfo(activeChatId);
+                System.out.println("GroupID == " + activeChatId);
+            } else {
+                System.out.println("ChatID == " + activeChatId);
+
+                openChatInfo(activeChatId);
+            }
         });
+        newChatButton.setOnAction(e -> openNewChatDialog());
+
 
     }
 
-    /* ================= AVATAR ================= */
+    // Load avatar from url to Image!
     private Image loadAvatar(String url) {
         InputStream is;
 
@@ -113,7 +128,7 @@ public class ChatController {
         chatAvatar.setImage(loadAvatar(url));
     }
 
-    /* ================= REQUEST LIST ================= */
+    // REQUEST LIST
     private void requestUserList() {
         System.out.println("[REQUEST] Sending list_users request...");
         JsonObject msg = new JsonObject();
@@ -122,7 +137,7 @@ public class ChatController {
         socket.send(msg);
     }
 
-    /* ================= OPEN CHAT ================= */
+    // OPEN CHAT
     private void openGroup(int id, String name) {
         System.out.println("[OPEN] Opening group chat: " + id + " - " + name);
         activeChatId = id;
@@ -165,6 +180,7 @@ public class ChatController {
 
         socket.send(msg);
     }
+
     private void routeIncomingMessage(ChatMessage msg) {
 
         // Ignore messages not belonging to active chat
@@ -176,7 +192,6 @@ public class ChatController {
 
         if (!sameChat) {
             System.out.println("[ROUTE] Message for inactive chat → ignored");
-            // TODO: store per-chat history
             return;
         }
 
@@ -185,7 +200,7 @@ public class ChatController {
     }
 
 
-    /* ================= SEND ================= */
+    // Send logic
     private void sendMessage() {
         if (activeChatId == null) {
             System.out.println("[SEND] No active chat selected.");
@@ -208,18 +223,13 @@ public class ChatController {
         JsonObject msg = new JsonObject();
         msg.addProperty("type", "send_message");
         msg.add("payload", payload);
-//
-//        chatHistory.add(new ChatMessage(Session.getUserId(), "Me", "", content));
-//        renderMessages();
-
-
         socket.send(msg);
 
         messageField.clear();
     }
 
 
-    /* ================= SERVER ================= */
+    // Handle server message
     private void handleServerMessage(JsonObject msg) {
         if (!Session.isLoggedIn()) {
             System.out.println("[SERVER] Message ignored (not logged in)");
@@ -301,29 +311,29 @@ public class ChatController {
 
                 String chatType = p.get("chat_type").getAsString();
 
-                int senderId = p.get("sender_id").getAsInt();
-                int receiverId = p.get("receiver_id").getAsInt();
+                int senderId = p.has("sender_id") ? p.get("sender_id").getAsInt() : -1;
+                int receiverId = p.has("receiver_id") ? p.get("receiver_id").getAsInt() : -1;
 
                 int chatId;
-                if (chatType.equals("group")) {
-                    chatId = (int) Double.parseDouble(p.get("group_id").getAsString());
+                if ("group".equals(chatType)) {
+                    chatId = p.has("group_id") ? p.get("group_id").getAsInt() : activeChatId;
                 } else {
-                    chatId = (senderId == Session.getUserId())
-                            ? receiverId
-                            : senderId;
+                    chatId = (senderId == Session.getUserId()) ? receiverId : senderId;
                 }
 
                 ChatMessage incoming = new ChatMessage(
-                        p.get("sender_id").getAsInt(),
-                        p.get("sender_username").getAsString(),
+                        senderId,
+                        p.has("sender_username") ? p.get("sender_username").getAsString() : "Unknown",
                         p.has("avatar_url") ? p.get("avatar_url").getAsString() : "",
-                        p.get("content").getAsString(),
+                        p.has("content") ? p.get("content").getAsString() : "",
                         chatType,
                         chatId
                 );
 
                 routeIncomingMessage(incoming);
+                requestUserList();
             });
+
 
             case "logout_response" -> Platform.runLater(() -> {
                 JsonObject payload = msg.getAsJsonObject("payload");
@@ -332,11 +342,226 @@ public class ChatController {
                     switchToLogin();
                 } else {
                     System.out.println("[LOGOUT] Logout failed: " + payload);
-                    // Optionally show alert
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Logout failed on server.");
                     alert.show();
                 }
             });
+
+            case "get_user_profile_response" -> Platform.runLater(() -> {
+                if (pendingUserInfoRequest == null) return;
+
+                JsonObject payload = msg.getAsJsonObject("payload");
+                if (!"ok".equals(payload.get("status").getAsString())) return;
+
+                JsonObject user = payload.getAsJsonObject("user");
+                int userId = user.get("id").getAsInt();
+
+                if (userId != pendingUserInfoRequest) return;
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/chat_view.fxml"));
+                    Parent overlay = loader.load();
+                    ChatInfoController controller = loader.getController();
+
+                    controller.setBio(user.get("bio").getAsString());
+                    controller.setUsername(user.get("username").getAsString());
+                    controller.setAvatar(new ImageView(loadAvatar(user.get("avatar_url").getAsString())));
+                    // Save controller for later use
+                    overlay.getProperties().put("controller", controller);
+
+                    controller.setCloseCallback(this::closeChatInfo);
+                    chatInfoOverlay = overlay;
+                    overlay.setPickOnBounds(false);
+                    rootStack.getChildren().add(overlay);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                pendingUserInfoRequest = null;
+            });
+
+            case "list_group_members_response" -> Platform.runLater(() -> {
+                JsonObject payload = msg.getAsJsonObject("payload");
+                if (!payload.has("members")) return;
+
+                JsonArray members = payload.getAsJsonArray("members");
+
+                // If the overlay is open, populate members immediately
+                if (groupInfoOverlay != null) {
+                    Object controllerObj = groupInfoOverlay.getProperties().get("controller");
+                    if (controllerObj instanceof GroupInfoController controller) {
+                        controller.populateMembers(members);
+                    }
+                }
+
+            });
+
+
+            case "get_group_info_response" -> Platform.runLater(() -> {
+                JsonObject payload = msg.getAsJsonObject("payload");
+                if (!"ok".equals(payload.get("status").getAsString())) {
+                    System.out.println("[GROUP INFO] Error: " + payload.get("message").getAsString());
+                    return;
+                }
+
+
+                JsonObject group = payload.getAsJsonObject("group");
+                // request members AFTER opening UI
+                JsonObject req = new JsonObject();
+                req.addProperty("type", "list_group_members");
+                JsonObject p = new JsonObject();
+                p.addProperty("group_id", String.valueOf(group.get("id").getAsInt()));
+                req.add("payload", p);
+
+                socket.send(req);
+                if (groupInfoOverlay != null) return; // already open
+
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/group_view.fxml"));
+                    Parent overlay = loader.load();
+                    GroupInfoController controller = loader.getController();
+
+                    controller.groupNameLabel.setText(group.get("name").getAsString());
+                    controller.groupAboutLabel.setText(group.get("about").getAsString());
+                    controller.setGroupId(group.get("id").getAsInt());
+                    controller.membersBox.getChildren().clear();
+
+                    // Save controller for later use
+                    overlay.getProperties().put("controller", controller);
+
+                    controller.setCloseCallback(this::closeGroupInfo);
+                    controller.addMemberButton.setOnAction(e -> openAddMemberDialog(group.get("id").getAsInt()));
+
+                    groupInfoOverlay = overlay;
+                    overlay.setPickOnBounds(false);
+                    rootStack.getChildren().add(overlay);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            });
+
+            case "leave_group_response" -> Platform.runLater(() -> {
+                JsonObject payload = msg.getAsJsonObject("payload");
+
+                if (!"ok".equals(payload.get("status").getAsString())) {
+                    System.out.println("[GROUP] Leave failed: " + payload.get("message").getAsString());
+                    return;
+                }
+
+                int leftGroupId = payload.get("group_id").getAsInt();
+
+                // Close group info overlay
+                closeGroupInfo();
+
+                // If currently viewing this group → reset UI
+                if (activeChatIsGroup && activeChatId != null && activeChatId == leftGroupId) {
+                    activeChatId = null;
+                    activeChatIsGroup = false;
+                    chatTitle.setText("Select a chat");
+                    chatSubtitle.setText("");
+                    messagesBox.getChildren().clear();
+                }
+
+                // Refresh sidebar
+                requestUserList();
+
+                System.out.println("[GROUP] Successfully left group " + leftGroupId);
+            });
+            case "remove_user_from_group_response" -> Platform.runLater(() -> {
+                JsonObject payload = msg.getAsJsonObject("payload");
+
+                if (!"ok".equals(payload.get("status").getAsString())) {
+                    System.out.println("[GROUP] Kick failed");
+                    return;
+                }
+
+                int removedUserId = payload.get("removed_user_id").getAsInt();
+                System.out.println("[GROUP] User kicked: " + removedUserId);
+
+                // Refresh members
+                JsonObject req = new JsonObject();
+                req.addProperty("type", "list_group_members");
+                JsonObject p = new JsonObject();
+                p.addProperty("group_id", String.valueOf(activeChatId));
+                req.add("payload", p);
+
+                socket.send(req);
+            });
+
+            case "promote_demote_user_response" -> Platform.runLater(() -> {
+                JsonObject payload = msg.getAsJsonObject("payload");
+
+                if (!"ok".equals(payload.get("status").getAsString())) {
+                    System.out.println("[GROUP] Role change failed: " + payload.get("message"));
+                    return;
+                }
+
+                System.out.println("[GROUP] Role updated for user " + payload.get("user_id"));
+
+                // Refresh group members
+                JsonObject req = new JsonObject();
+                req.addProperty("type", "list_group_members");
+
+                JsonObject p = new JsonObject();
+                p.addProperty("group_id", String.valueOf(activeChatId));
+
+                req.add("payload", p);
+                socket.send(req);
+            });
+
+            case "add_group_member_response" -> Platform.runLater(() -> {
+                JsonObject payload = msg.getAsJsonObject("payload");
+
+                if (!"ok".equals(payload.get("status").getAsString())) {
+                    System.out.println("[GROUP] Add member failed: " + payload.get("message"));
+                    return;
+                }
+
+                System.out.println("[GROUP] Member added successfully");
+
+                // Refresh members
+                JsonObject req = new JsonObject();
+                req.addProperty("type", "list_group_members");
+
+                JsonObject p = new JsonObject();
+                p.addProperty("group_id", String.valueOf(activeChatId));
+
+                req.add("payload", p);
+                socket.send(req);
+            });
+
+            case "search_users_response" -> Platform.runLater(() -> {
+                if (newChatResultsBox == null || newChatSearchField == null) return;
+
+                newChatResultsBox.getChildren().clear();
+                JsonArray users = msg.getAsJsonObject("payload").getAsJsonArray("users");
+                if (users == null) return;
+
+                for (var u : users) {
+                    JsonObject user = u.getAsJsonObject();
+                    Button userBtn = new Button(user.get("username").getAsString());
+                    userBtn.setMaxWidth(Double.MAX_VALUE);
+                    userBtn.getStyleClass().add("search-user-btn");
+
+                    int userId = user.get("id").getAsInt();
+                    userBtn.setOnAction(ev -> {
+                        // Open private chat and send "hi"
+                        openPrivate(userId, user.get("username").getAsString());
+                        JsonObject hiMsg = new JsonObject();
+                        hiMsg.addProperty("type", "send_message");
+                        JsonObject hiPayload = new JsonObject();
+                        hiPayload.addProperty("receiver_id", userId);
+                        hiPayload.addProperty("content", "hi");
+                        hiMsg.add("payload", hiPayload);
+                        socket.send(hiMsg);
+
+                        Stage stage = (Stage) newChatResultsBox.getScene().getWindow();
+                        stage.close();
+                    });
+                    newChatResultsBox.getChildren().add(userBtn);
+                }
+            });
+
+
             case "error" -> Platform.runLater(() -> {
                 System.out.println("[SERVER ERROR] " + msg.get("payload"));
             });
@@ -345,7 +570,7 @@ public class ChatController {
         }
     }
 
-    /* ================= TRANSLATE ================= */
+    // Translation
     @FXML
     private void toggleTranslate() {
         translateMode = !translateMode;
@@ -360,7 +585,7 @@ public class ChatController {
         renderMessages();
     }
 
-    /* ================= UI ================= */
+    // MANAGE UI
     private void renderMessages() {
         System.out.println("[UI] Rendering messages. Total: " + chatHistory.size());
         messagesBox.getChildren().clear();
@@ -395,7 +620,7 @@ public class ChatController {
                 // mine label goes directly into row
                 row.getChildren().addAll(msgLabel, avatar);
             } else {
-                // others: label lives inside container
+                // others label lives inside container
                 messageContainer.getChildren().add(msgLabel);
                 row.getChildren().addAll(avatar, messageContainer);
             }
@@ -419,7 +644,6 @@ public class ChatController {
                 }).start();
             }
         }
-
 
 
         Platform.runLater(() -> messagesScroll.setVvalue(1));
@@ -451,6 +675,7 @@ public class ChatController {
 
         } catch (Exception e) {
             e.printStackTrace();
+            socket.setOnMessage(this::handleServerMessage);
         }
     }
 
@@ -462,6 +687,7 @@ public class ChatController {
             settingsController = null;
             socket.setOnMessage(this::handleServerMessage); // restore
         }
+        requestUserList();
     }
 
     private void handleLogout() {
@@ -503,27 +729,19 @@ public class ChatController {
 
     private Parent chatInfoOverlay;
 
-    private void openChatInfo(int userId, String username, String bio, String avatarUrl) {
-        try {
-            if (chatInfoOverlay != null) return;
+    private void openChatInfo(int userId) {
+        pendingUserInfoRequest = userId;
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/chat_view.fxml"));
-            Parent overlay = loader.load();
-            ChatInfoController controller = loader.getController();
+        JsonObject msg = new JsonObject();
+        msg.addProperty("type", "get_user_profile");
 
-            controller.setUsername(username);
-            controller.setBio(bio);
-            controller.setAvatar(new ImageView(loadAvatar(avatarUrl)));
-            controller.setCloseCallback(this::closeChatInfo);
+        JsonObject p = new JsonObject();
+        p.addProperty("user_id", String.valueOf(userId));
+        msg.add("payload", p);
 
-            chatInfoOverlay = overlay;
-            overlay.setPickOnBounds(false);
-            rootStack.getChildren().add(overlay);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        socket.send(msg);
     }
+
 
     private void closeChatInfo() {
         if (chatInfoOverlay != null) {
@@ -534,33 +752,143 @@ public class ChatController {
 
     private Parent groupInfoOverlay;
 
-    private void openGroupInfo(int groupId, String groupName, String groupAbout) {
-        try {
-            if (groupInfoOverlay != null) return;
+    private void openGroupInfo(int groupId) {
+        pendingGroupInfoRequest = groupId;
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/yegnachat/client/group_view.fxml"));
-            Parent overlay = loader.load();
-            GroupInfoController controller = loader.getController();
+        JsonObject msg = new JsonObject();
+        msg.addProperty("type", "get_group_info");
+        JsonObject payload = new JsonObject();
+        payload.addProperty("group_id", String.valueOf(groupId));
+        msg.add("payload", payload);
 
-            controller.setCloseCallback(this::closeGroupInfo);
-            controller.groupNameLabel.setText(groupName);
-            controller.groupAboutLabel.setText(groupAbout);
-            // You can populate membersBox dynamically later
-
-            groupInfoOverlay = overlay;
-            overlay.setPickOnBounds(false);
-            rootStack.getChildren().add(overlay);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        socket.send(msg);
     }
+
 
     private void closeGroupInfo() {
         if (groupInfoOverlay != null) {
             rootStack.getChildren().remove(groupInfoOverlay);
             groupInfoOverlay = null;
+            pendingGroupInfoRequest = null;
         }
     }
+
+    private void openAddMemberDialog(int groupId) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Add Member");
+        dialog.setHeaderText("Enter username to add to the group");
+        dialog.setContentText("Username:");
+
+        dialog.showAndWait().ifPresent(username -> {
+            if (username.isBlank()) return;
+
+            JsonObject msg = new JsonObject();
+            msg.addProperty("type", "add_group_member");
+
+            JsonObject payload = new JsonObject();
+            payload.addProperty("group_id", String.valueOf(groupId));
+            payload.addProperty("username", username);
+
+            msg.add("payload", payload);
+            socket.send(msg);
+        });
+    }
+
+    private void openNewChatDialog() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("New Chat / Create Group");
+
+        // --- Main container ---
+        VBox container = new VBox(10);
+        container.setId("container");
+
+        // --- Tabs ---
+        ToggleGroup toggleGroup = new ToggleGroup();
+        ToggleButton newChatBtn = new ToggleButton("New Chat");
+        ToggleButton newGroupBtn = new ToggleButton("Create Group");
+        newChatBtn.setToggleGroup(toggleGroup);
+        newGroupBtn.setToggleGroup(toggleGroup);
+        newChatBtn.setSelected(true);
+
+        HBox tabBox = new HBox(10, newChatBtn, newGroupBtn);
+        container.getChildren().add(tabBox);
+
+        // --- New Chat UI ---
+        VBox newChatBox = new VBox(5);
+        newChatSearchField = new TextField();
+        newChatSearchField.setPromptText("Search users...");
+        newChatResultsBox = new VBox(5);
+        ScrollPane searchScroll = new ScrollPane(newChatResultsBox);
+        searchScroll.setFitToWidth(true);
+        searchScroll.setPrefHeight(200);
+        newChatBox.getChildren().addAll(newChatSearchField, searchScroll);
+
+        // --- Create Group UI ---
+        VBox newGroupBox = new VBox(5);
+        TextField groupNameField = new TextField();
+        TextField aboutField = new TextField();
+        groupNameField.setPromptText("Group name");
+        aboutField.setPromptText("About");
+        Button createGroupBtn = new Button("Create Group");
+        createGroupBtn.setStyle("-fx-background-color: #0078d7; -fx-text-fill: white; -fx-background-radius: 6;");
+        newGroupBox.getChildren().addAll(groupNameField, aboutField, createGroupBtn);
+
+        container.getChildren().add(newChatBox); // default
+
+        // --- Tab switching ---
+        toggleGroup.selectedToggleProperty().addListener((obs, oldT, newT) -> {
+            container.getChildren().remove(1); // remove old content
+            if (newT == newChatBtn) {
+                container.getChildren().add(newChatBox);
+            } else {
+                container.getChildren().add(newGroupBox);
+            }
+        });
+
+        // --- Dynamic search ---
+        newChatSearchField.textProperty().addListener((obs, oldText, newText) -> {
+            newChatResultsBox.getChildren().clear();
+            if (!newText.isBlank()) {
+                JsonObject searchMsg = new JsonObject();
+                searchMsg.addProperty("type", "search_users");
+                JsonObject payload = new JsonObject();
+                payload.addProperty("query", newText);
+                searchMsg.add("payload", payload);
+                socket.send(searchMsg);
+            }
+        });
+
+        // --- Create Group action ---
+        createGroupBtn.setOnAction(ev -> {
+            String name = groupNameField.getText().trim();
+            String about = aboutField.getText().trim();
+            if (!name.isEmpty()) {
+                JsonObject createMsg = new JsonObject();
+                createMsg.addProperty("type", "create_group");
+                JsonObject payload = new JsonObject();
+                payload.addProperty("name", name);
+                payload.addProperty("about", about);
+                createMsg.add("payload", payload);
+                socket.send(createMsg);
+
+                requestUserList();
+                dialog.close();
+            }
+        });
+
+        // --- Scrollable dialog ---
+        ScrollPane scrollPane = new ScrollPane(container);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefHeight(400);
+        dialog.getDialogPane().setContent(scrollPane);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        // --- Load CSS ---
+        scrollPane.getStylesheets().add(getClass().getResource("/css/newchat.css").toExternalForm());
+
+        dialog.showAndWait();
+    }
+
+
 
 }
