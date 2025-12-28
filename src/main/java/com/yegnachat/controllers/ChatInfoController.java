@@ -1,5 +1,6 @@
 package com.yegnachat.controllers;
 
+import com.yegnachat.util.ImageUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -51,7 +52,9 @@ public class ChatInfoController {
         bioLabel.setText(bio);
     }
 
-    public void setAvatar(ImageView avatar) {
-        avatarImage.setImage(avatar.getImage());
+    public void setAvatarUrl(String avatarUrl) {
+        avatarImage.setImage(
+                ImageUtil.loadAvatar(avatarUrl)
+        );
     }
 }

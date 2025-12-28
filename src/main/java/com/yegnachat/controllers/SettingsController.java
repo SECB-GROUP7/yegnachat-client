@@ -3,6 +3,7 @@ package com.yegnachat.controllers;
 import com.google.gson.JsonObject;
 import com.yegnachat.net.ChatClientSocket;
 import com.yegnachat.session.Session;
+import com.yegnachat.util.ImageUtil;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -11,33 +12,42 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.util.Optional;
 
 public class SettingsController {
 
     private ChatClientSocket socket;
     private Runnable closeCallback;
+    @FXML
+    private Button closeButton;
+    @FXML
+    private Button logoutButton;
+    @FXML
+    private Button editBioButton;
+    @FXML
+    private Button changePasswordButton;
+    @FXML
+    private Button saveLanguageButton;
 
-    /* ================= FXML ================= */
-    @FXML private Button closeButton;
-    @FXML private Button logoutButton;
-    @FXML private Button editBioButton;
-    @FXML private Button changePasswordButton;
-    @FXML private Button saveLanguageButton;
-
-    @FXML private Label usernameLabel;
-    @FXML private Label bioLabel;
-    @FXML private TextField languageField;
-    @FXML private ImageView avatarImage;
+    @FXML
+    private Label usernameLabel;
+    @FXML
+    private Label bioLabel;
+    @FXML
+    private TextField languageField;
+    @FXML
+    private ImageView avatarImage;
     private Runnable logoutCallback;
+
 
     public void setLogoutCallback(Runnable logoutCallback) {
         this.logoutCallback = logoutCallback;
     }
 
-    /* ================= INIT ================= */
 
     @FXML
     public void initialize() {
@@ -70,7 +80,7 @@ public class SettingsController {
         this.closeCallback = closeCallback;
     }
 
-    /* ================= SOCKET ================= */
+    // SOCKET
 
     public void handleServerMessage(String type, JsonObject payload) {
 
@@ -84,10 +94,8 @@ public class SettingsController {
                         usernameLabel.setText(user.get("username").getAsString());
                         bioLabel.setText(user.get("bio").getAsString());
 
-                        String avatarUrl = user.has("avatar_url")
-                                ? user.get("avatar_url").getAsString()
-                                : "";
-
+                        String avatarUrl = user.get("avatar_url").getAsString();
+                        System.out.println("Avatar_URL: "+avatarUrl);
                         setAvatar(avatarUrl);
                     });
                 }
@@ -96,7 +104,7 @@ public class SettingsController {
 
             case "get_preferred_language_response" -> {
                 if ("ok".equals(payload.get("status").getAsString())) {
-                    Platform.runLater(()->{
+                    Platform.runLater(() -> {
                         languageField.setText(
                                 payload.get("preferred_language_code").getAsString()
                         );
@@ -107,7 +115,7 @@ public class SettingsController {
 
             case "set_preferred_language_response" -> {
                 if ("ok".equals(payload.get("status").getAsString())) {
-                    Platform.runLater(()->{
+                    Platform.runLater(() -> {
                         String code = payload.get("preferred_language_code").getAsString();
                         languageField.setText(code);
                         Session.setPreferredLanguageCode(code);
@@ -117,7 +125,7 @@ public class SettingsController {
             }
 
             case "set_password_response" -> {
-                Platform.runLater(()->{
+                Platform.runLater(() -> {
                     showInfo(
                             "ok".equals(payload.get("status").getAsString())
                                     ? "Success"
@@ -127,6 +135,7 @@ public class SettingsController {
                 });
 
             }
+
         }
     }
 
@@ -135,7 +144,7 @@ public class SettingsController {
         send("get_preferred_language");
     }
 
-    /* ================= SEND ================= */
+    //Sending
 
     private void send(String type) {
         JsonObject msg = new JsonObject();
@@ -151,8 +160,6 @@ public class SettingsController {
         socket.send(msg);
     }
 
-    /* ================= BIO ================= */
-
     private void openEditBioDialog() {
         TextInputDialog dialog = new TextInputDialog(bioLabel.getText());
         dialog.setTitle("Edit Bio");
@@ -165,8 +172,6 @@ public class SettingsController {
             bioLabel.setText(bio);
         });
     }
-
-    /* ================= PASSWORD ================= */
 
     private void openChangePasswordDialog() {
         Platform.runLater(() -> {
@@ -193,8 +198,6 @@ public class SettingsController {
         });
     }
 
-    /* ================= LOGOUT ================= */
-
     private void logout() {
         if (socket != null) {
             JsonObject msg = new JsonObject();
@@ -208,10 +211,6 @@ public class SettingsController {
         }
     }
 
-
-
-
-    /* ================= UTILS ================= */
 
     private void savePreferredLanguage() {
         String code = languageField.getText().trim();
@@ -231,21 +230,40 @@ public class SettingsController {
         });
     }
 
-    private void setAvatar(String url) {
-        if (url == null || url.isBlank()) {
-            avatarImage.setImage(new Image(getClass().getResourceAsStream("/icons/user.png")));
-            return;
-        }
-        try {
-            Image img = new Image(url, true);
-            img.errorProperty().addListener((obs, oldV, newV) -> {
-                if (newV) {
-                    avatarImage.setImage(new Image(getClass().getResourceAsStream("/icons/user.png")));
-                }
-            });
-            avatarImage.setImage(img);
-        } catch (Exception e) {
-            avatarImage.setImage(new Image(getClass().getResourceAsStream("/icons/user.png")));
-        }
+    private void setAvatar(String avatarUrl) {
+        Image img = ImageUtil.loadAvatar(avatarUrl);
+        avatarImage.setImage(img);
     }
+
+
+    @FXML
+    private void onChangeAvatar() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Choose Avatar Image");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(
+                        "Images", "*.png", "*.jpg", "*.jpeg", "*.webp"
+                )
+        );
+
+        File file = chooser.showOpenDialog(
+                avatarImage.getScene().getWindow()
+        );
+
+        if (file == null) return;
+
+        new Thread(() -> {
+            try {
+                String avatarUrl = ImageUtil.uploadAvatar(file, Session.getUserId());
+                Platform.runLater(() -> avatarImage.setImage(ImageUtil.loadAvatar(avatarUrl)));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+
+
+    }
+
+
 }

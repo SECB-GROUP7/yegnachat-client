@@ -1,30 +1,114 @@
-/* /css/newchat.css */
-.toggle-button {
-    -fx-background-color: #0078d7;
-    -fx-text-fill: white;
-    -fx-background-radius: 6;
-    -fx-font-weight: bold;
-}
 
-.toggle-button:selected {
-    -fx-background-color: #005ea3;
-}
-
-.search-user-btn {
-    -fx-background-color: #f0f0f0;
-    -fx-text-fill: #333333;
-    -fx-background-radius: 6;
-    -fx-padding: 6 12 6 12;
-}
-
-.search-user-btn:hover {
-    -fx-background-color: #0078d7;
-    -fx-text-fill: white;
+.dialog-pane {
+    -fx-background-color: #020617;
+    -fx-border-color: #1e293b;
+    -fx-border-width: 1;
 }
 
 #container {
-    -fx-padding: 10;
-    -fx-spacing: 10;
-    -fx-background-color: #ffffff;
+    -fx-padding: 16;
+    -fx-spacing: 14;
+    -fx-background-color: #020617;
+    -fx-border-color: #1e293b;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+}
+
+.toggle-button {
+    -fx-background-color: #0f172a;
+    -fx-text-fill: #94a3b8;
+    -fx-background-radius: 10;
+    -fx-font-weight: bold;
+    -fx-padding: 8 18;
+    -fx-border-color: #1e293b;
+    -fx-border-radius: 10;
+}
+
+.toggle-button:hover {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #e5e7eb;
+}
+
+.toggle-button:selected {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-border-color: transparent;
+}
+.text-field {
+    -fx-background-color: #020617;
+    -fx-text-fill: #e5e7eb;
+    -fx-border-color: #1e293b;
     -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 10;
+    -fx-prompt-text-fill: #64748b;
+}
+
+.text-field:focused {
+    -fx-border-color: #2563eb;
+    -fx-background-color: #020617;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Subtle scrollbar */
+.scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .thumb {
+    -fx-background-color: #1e293b;
+    -fx-background-radius: 6;
+}
+
+.scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #334155;
+}
+.search-user-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cbd5f5;
+    -fx-background-radius: 8;
+    -fx-padding: 10 14;
+    -fx-alignment: CENTER_LEFT;
+    -fx-font-size: 13px;
+}
+
+.search-user-btn:hover {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: white;
+}
+
+.button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16;
+}
+
+.button:hover {
+    -fx-background-color: #1d4ed8;
+}
+
+.button:pressed {
+    -fx-background-color: #1e40af;
+}
+
+.dialog-pane .button-bar .button {
+    -fx-background-color: #0f172a;
+    -fx-text-fill: #cbd5f5;
+}
+
+.dialog-pane .button-bar .button:hover {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: white;
 }

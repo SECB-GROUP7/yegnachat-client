@@ -1,55 +1,86 @@
-/* ===== FONTS ===== */
 .root {
-    -fx-font-family: "Noto Sans Ethiopic", "Segoe UI", "System";
-    -fx-font-size: 14px;
+    -fx-background-color: #0f172a;
 }
 
-/* ===== LEFT CHAT LIST ===== */
-#chatListBox .button {
-    -fx-background-color: #ffffff;
-    -fx-text-fill: #333333;
-    -fx-font-weight: 500;
+VBox {
+    -fx-background-color: #020617;
+}
+
+Label {
+    -fx-text-fill: white;
+}
+
+ScrollPane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+Button {
     -fx-background-radius: 8;
-    -fx-padding: 8 12;
     -fx-cursor: hand;
-    -fx-border-color: transparent;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 2,0,0,1);
 }
 
-#chatListBox .button:hover {
-    -fx-background-color: #e6f0ff;
-    -fx-text-fill: #0078d7;
+#chatListBox > Button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cbd5f5;
+    -fx-padding: 10;
 }
 
-/* ===== CHAT BUBBLES ===== */
+#chatListBox > Button:hover {
+    -fx-background-color: #1e293b;
+}
+
+#titleHbox {
+    -fx-background-color: #020617;
+    -fx-border-color: #1e293b;
+    -fx-border-width: 0 0 1 0;
+}
+
+#chatTitle {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+#chatSubtitle {
+    -fx-text-fill: #94a3b8;
+}
+
+
+#messagesScroll {
+    -fx-background-color: #020617;
+}
+
 .bubble-mine {
-    -fx-background-color: #cce5ff;
-    -fx-text-fill: #000000;
-    -fx-padding: 10 14;
-    -fx-background-radius: 16px;
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-padding: 8 12;
+    -fx-background-radius: 12;
 }
 
 .bubble-other {
-    -fx-background-color: #e8e8e8;
-    -fx-text-fill: #000000;
-    -fx-padding: 10 14;
-    -fx-background-radius: 16px;
-}
-
-/* INPUT FIELD */
-.chat-input {
-    -fx-background-radius: 8;
-    -fx-background-color: #f0f2f5;
+    -fx-background-color: #334155;
+    -fx-text-fill: #e5e7eb;
     -fx-padding: 8 12;
+    -fx-background-radius: 12;
 }
 
-/* BUTTONS */
-.button {
-    -fx-font-weight: bold;
-    -fx-cursor: hand;
+.chat-input {
+    -fx-background-color: #020617;
+    -fx-text-fill: white;
+    -fx-border-color: #1e293b;
+    -fx-border-radius: 6;
+}
+#translateButton{
+    -fx-background-color: #0078d7;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
 }
 
-/* SCROLLPANE STYLING */
-.scroll-pane {
-    -fx-background-color: transparent;
+.chat-selected {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+}
+
+.chat-selected:hover {
+    -fx-background-color: #2563eb;
 }

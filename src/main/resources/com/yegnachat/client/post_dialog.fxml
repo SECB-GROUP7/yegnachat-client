@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml"
+      spacing="15"
+      styleClass="post-dialog">
+    <padding>
+        <Insets bottom="20" left="20" right="20" top="20"/>
+    </padding>
+    <Label text="Create Post" styleClass="dialog-title"/>
+
+    <TextArea fx:id="contentField"
+              promptText="What's happening?"
+              wrapText="true"
+              prefHeight="120"/>
+
+    <HBox spacing="10">
+        <Button text="Upload Image" fx:id="uploadImageBtn"/>
+        <Label fx:id="imageNameLabel" text="No image selected"/>
+    </HBox>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancel" styleClass="cancel-btn"/>
+        <Button text="Post" styleClass="post-btn"/>
+    </HBox>
+
+</VBox>

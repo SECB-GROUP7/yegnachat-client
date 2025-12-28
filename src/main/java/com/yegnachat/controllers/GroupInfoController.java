@@ -4,6 +4,7 @@ import com.yegnachat.net.ChatClientSocket;
 import com.yegnachat.session.Session;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.yegnachat.util.ImageUtil;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -93,7 +94,9 @@ public class GroupInfoController {
             HBox row = new HBox(10);
             row.setStyle("-fx-alignment: center-left;");
 
-            ImageView avatar = new ImageView(loadAvatar(avatarUrl));
+            ImageView avatar = new ImageView(
+                    ImageUtil.loadAvatar(avatarUrl)
+            );
             avatar.setFitWidth(32);
             avatar.setFitHeight(32);
             avatar.setPreserveRatio(true);
@@ -146,17 +149,17 @@ public class GroupInfoController {
         }
     }
 
-    private boolean isCurrentUserAdmin(JsonArray members) {
-        int myId = Session.getUserId();
-        for (var m : members) {
-            JsonObject o = m.getAsJsonObject();
-            if (o.get("id").getAsInt() == myId) {
-                String role = o.get("role").getAsString();
-                return role.equals("admin") || role.equals("owner");
-            }
-        }
-        return false;
-    }
+//    private boolean isCurrentUserAdmin(JsonArray members) {
+//        int myId = Session.getUserId();
+//        for (var m : members) {
+//            JsonObject o = m.getAsJsonObject();
+//            if (o.get("id").getAsInt() == myId) {
+//                String role = o.get("role").getAsString();
+//                return role.equals("admin") || role.equals("owner");
+//            }
+//        }
+//        return false;
+//    }
 
     private void kickUser(int userId) {
         JsonObject msg = new JsonObject();
@@ -171,16 +174,6 @@ public class GroupInfoController {
     }
 
 
-    private Image loadAvatar(String url) {
-        InputStream is;
-        if (url == null || url.isBlank()) {
-            is = getClass().getResourceAsStream("/icons/user.png");
-        } else {
-            is = getClass().getResourceAsStream(url);
-            if (is == null) is = getClass().getResourceAsStream("/icons/user.png");
-        }
-        return new Image(is);
-    }
 
     private String getMyRole(JsonArray members) {
         int myId = Session.getUserId();

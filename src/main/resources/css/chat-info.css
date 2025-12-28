@@ -1,17 +1,25 @@
 .info-panel {
-    -fx-background-color: white;
-    -fx-border-color: #333;
-    -fx-border-width: 1;
+    -fx-background-color: #020617;
+    -fx-background-radius: 16;
 }
 
 .info-header {
-    -fx-background-color: #2a2a2a;
+    -fx-background-color: #020617;
 }
 
 .info-title {
     -fx-text-fill: white;
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8;
+}
+
+.icon-button:hover {
+    -fx-text-fill: white;
 }
 
 .info-username {
@@ -21,11 +29,6 @@
 }
 
 .info-bio {
-    -fx-text-fill: #bbbbbb;
-    -fx-font-size: 12px;
-}
-
-.icon-button {
-    -fx-background-color: transparent;
-    -fx-text-fill: #cccccc;
+    -fx-text-fill: #94a3b8;
+    -fx-text-alignment: center;
 }

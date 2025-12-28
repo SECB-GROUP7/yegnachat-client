@@ -1,51 +1,48 @@
 .settings-root {
-    -fx-background-color: #f8f9fa;
+    -fx-background-color: #0f172a;
 }
 
 .settings-topbar {
-    -fx-background-color: #ffffff;
-    -fx-border-color: #e0e0e0;
-    -fx-border-width: 0 0 1 0;
+    -fx-background-color: #020617;
 }
 
 .settings-title {
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-}
-
-.settings-username {
+    -fx-text-fill: white;
     -fx-font-size: 18px;
     -fx-font-weight: bold;
 }
 
-.settings-bio {
-    -fx-text-fill: #555;
-    -fx-text-alignment: center;
-}
-
-.section-title {
-    -fx-font-size: 14px;
+.settings-username {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
 }
 
-.primary-button {
-    -fx-background-color: #2196f3;
-    -fx-text-fill: white;
-    -fx-background-radius: 6;
+.settings-bio {
+    -fx-text-fill: #94a3b8;
+    -fx-text-alignment: center;
+}
+
+.settings-scroll {
+    -fx-background-color: transparent;
 }
 
 .secondary-button {
-    -fx-background-color: #e0e0e0;
-    -fx-text-fill: #333;
-    -fx-background-radius: 6;
+    -fx-background-color: #1e293b;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #334155;
+}
+
+.primary-button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
 }
 
 .danger-button {
-    -fx-background-color: #f44336;
-    -fx-text-fill: white;
-    -fx-background-radius: 6;
-}
-
-.choice-box {
-    -fx-background-radius: 6;
+    -fx-background-color: #f87171;
+    -fx-text-fill: #020617;
 }

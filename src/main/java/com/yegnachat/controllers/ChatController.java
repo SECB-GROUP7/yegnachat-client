@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.yegnachat.net.ChatClientSocket;
 import com.yegnachat.session.Session;
+import com.yegnachat.util.TokenStorage;
 import com.yegnachat.util.TranslationService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -16,16 +17,18 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import com.yegnachat.util.ImageUtil;
 
 public class ChatController {
-
+    @FXML
+    public Button feedButton;
     @FXML
     private VBox chatListBox;
     @FXML
@@ -59,6 +62,7 @@ public class ChatController {
     private ChatClientSocket socket;
     private Integer activeChatId = null;
     private boolean activeChatIsGroup = false;
+    private Stage feedStage;
 
     private final List<ChatMessage> chatHistory = new ArrayList<>();
     private TranslationService translationService;
@@ -104,28 +108,12 @@ public class ChatController {
             }
         });
         newChatButton.setOnAction(e -> openNewChatDialog());
-
+        feedButton.setOnAction(e -> openFeedWindow());
 
     }
 
-    // Load avatar from url to Image!
-    private Image loadAvatar(String url) {
-        InputStream is;
-
-        if (url == null || url.isBlank()) {
-            is = getClass().getResourceAsStream("/icons/user.png");
-        } else {
-            is = getClass().getResourceAsStream(url);
-            if (is == null) {
-                System.out.println("[AVATAR] Could not load avatar at " + url + ", using default");
-                is = getClass().getResourceAsStream("/icons/user.png");
-            }
-        }
-        return new Image(is);
-    }
-
-    private void setAvatar(String url) {
-        chatAvatar.setImage(loadAvatar(url));
+    private void setAvatar(String avatarUrl) {
+        chatAvatar.setImage(ImageUtil.loadAvatar(avatarUrl));
     }
 
     // REQUEST LIST
@@ -364,7 +352,9 @@ public class ChatController {
 
                     controller.setBio(user.get("bio").getAsString());
                     controller.setUsername(user.get("username").getAsString());
-                    controller.setAvatar(new ImageView(loadAvatar(user.get("avatar_url").getAsString())));
+                    controller.setAvatarUrl(
+                            user.get("avatar_url").getAsString()
+                    );
                     // Save controller for later use
                     overlay.getProperties().put("controller", controller);
 
@@ -562,9 +552,7 @@ public class ChatController {
             });
 
 
-            case "error" -> Platform.runLater(() -> {
-                System.out.println("[SERVER ERROR] " + msg.get("payload"));
-            });
+            case "error" -> Platform.runLater(() -> System.out.println("[SERVER ERROR] " + msg.get("payload")));
 
             default -> System.out.println("[SERVER] Unknown message type: " + type);
         }
@@ -608,7 +596,10 @@ public class ChatController {
             msgLabel.setMaxWidth(420);
             msgLabel.getStyleClass().add(mine ? "bubble-mine" : "bubble-other");
 
-            ImageView avatar = new ImageView(loadAvatar(m.avatarUrl()));
+            ImageView avatar = new ImageView(
+                    ImageUtil.loadAvatar(m.avatarUrl())
+            );
+            // fitting width and height
             avatar.setFitWidth(28);
             avatar.setFitHeight(28);
             avatar.setPreserveRatio(true);
@@ -702,6 +693,7 @@ public class ChatController {
         socket.send(msg);
 
         // switch to login
+        TokenStorage.clearToken();
         Platform.runLater(this::switchToLogin);
     }
 
@@ -876,19 +868,50 @@ public class ChatController {
             }
         });
 
-        // --- Scrollable dialog ---
         ScrollPane scrollPane = new ScrollPane(container);
         scrollPane.setFitToWidth(true);
         scrollPane.setPrefHeight(400);
         dialog.getDialogPane().setContent(scrollPane);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
 
-        // --- Load CSS ---
         scrollPane.getStylesheets().add(getClass().getResource("/css/newchat.css").toExternalForm());
 
         dialog.showAndWait();
     }
 
+    private void openFeedWindow() {
+        try {
+            // Prevent opening multiple feed windows
+            if (feedStage != null && feedStage.isShowing()) {
+                feedStage.toFront();
+                return;
+            }
 
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/yegnachat/client/feed.fxml")
+            );
+
+            Parent root = loader.load();
+
+            Scene scene = new Scene(root);
+
+            feedStage = new Stage();
+            feedStage.setTitle("Feed");
+            feedStage.setScene(scene);
+
+
+            feedStage.getIcons().add(
+                    new Image(getClass().getResourceAsStream("/icons/feed.png"))
+            );
+
+            feedStage.setOnCloseRequest(e -> feedStage = null);
+
+            feedStage.show();
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Failed to open feed").show();
+        }
+    }
 
 }

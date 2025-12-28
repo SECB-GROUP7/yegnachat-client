@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane stylesheets="@../../../css/feed.css" xmlns="http://javafx.com/javafx/17.0.12"
+           xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.yegnachat.controllers.FeedController">
+
+    <BorderPane prefHeight="700" prefWidth="900" styleClass="root">
+        <top>
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="top-bar">
+                <Label styleClass="app-title" text="YegnaFeed"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="profileButton" styleClass="top-button" text="Profile"/>
+                <Button fx:id="refreshButton" styleClass="top-button" text="Refresh"/>
+            </HBox>
+        </top>
+
+        <center>
+            <ScrollPane fitToWidth="true" styleClass="feed-scroll">
+                <VBox fx:id="feedContainer" spacing="15">
+                    <padding>
+                        <Insets bottom="20" left="20" right="20" top="20"/>
+                    </padding>
+                    <VBox styleClass="post-card">
+
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <ImageView fitHeight="40" fitWidth="40" styleClass="avatar"/>
+                            <VBox>
+                                <Label styleClass="username" text="username"/>
+                            </VBox>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button styleClass="follow-btn" text="Follow"/>
+                        </HBox>
+
+                        <Label styleClass="post-content"
+                               text="This is a sample post content. It can span multiple lines." wrapText="true"/>
+
+                        <ImageView fitWidth="500" preserveRatio="true" styleClass="post-image"/>
+
+                        <HBox spacing="20" styleClass="post-actions">
+                            <Button prefHeight="26.0" prefWidth="33.0" styleClass="like-btn" fx:id="likeBtn"/>
+                            <Label prefHeight="26.0" prefWidth="43.0" styleClass="like-count" text="12 likes" fx:id="likeCountLabel"/>
+                            <Button prefHeight="26.0" prefWidth="82.0" styleClass="top-button" fx:id="commentsBtn"/>
+                        </HBox>
+
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+        </center>
+
+    </BorderPane>
+
+    <Button fx:id="newPostButton" styleClass="fab" text="+" StackPane.alignment="BOTTOM_RIGHT"/>
+
+</StackPane>

@@ -3,6 +3,7 @@ package com.yegnachat.util;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,11 +26,26 @@ public class TokenStorage {
             return null;
         }
     }
+
     public static void saveToken(String token) {
         try {
             Files.createDirectories(TOKEN_PATH.getParent()); // ensure folder exists
             JsonObject obj = new JsonObject();
             obj.addProperty("token", token);
+
+            try (FileWriter writer = new FileWriter(TOKEN_PATH.toFile())) {
+                gson.toJson(obj, writer);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void clearToken() {
+        try {
+            Files.createDirectories(TOKEN_PATH.getParent()); // ensure folder exists
+            JsonObject obj = new JsonObject();
+            obj.addProperty("token", "");
 
             try (FileWriter writer = new FileWriter(TOKEN_PATH.toFile())) {
                 gson.toJson(obj, writer);

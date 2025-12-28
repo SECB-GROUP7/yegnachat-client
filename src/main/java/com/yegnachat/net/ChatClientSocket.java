@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class ChatClientSocket {
@@ -13,6 +15,9 @@ public class ChatClientSocket {
     private final BufferedReader reader;
     private final BufferedWriter writer;
     private Consumer<JsonObject> onMessage;
+    private final List<Consumer<JsonObject>> listeners = new ArrayList<>();
+
+
     private static final Gson gson = new Gson();
 
     public ChatClientSocket(Socket socket) throws IOException {
@@ -50,6 +55,40 @@ public class ChatClientSocket {
             close();
         }
     }
+    public synchronized void sendRaw(InputStream in, long size) throws IOException {
+        OutputStream out = socket.getOutputStream();
+        byte[] buffer = new byte[8192];
+        long remaining = size;
+
+        while (remaining > 0) {
+            int read = in.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+            if (read == -1) break;
+            out.write(buffer, 0, read);
+            remaining -= read;
+        }
+        out.flush();
+    }
+
+    public void addMessageListener(Consumer<JsonObject> listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeMessageListener(Consumer<JsonObject> listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    private void onRawMessage(JsonObject msg) {
+        synchronized (listeners) {
+            for (var listener : listeners) {
+                listener.accept(msg);
+            }
+        }
+    }
+
 
     public void close() {
         try {

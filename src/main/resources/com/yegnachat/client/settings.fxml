@@ -12,7 +12,6 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.yegnachat.controllers.SettingsController">
 
-    <!-- TOP BAR -->
     <top>
         <HBox alignment="CENTER_LEFT" spacing="10" styleClass="settings-topbar">
             <padding>
@@ -44,7 +43,8 @@
 
                     <!-- PROFILE -->
                     <VBox alignment="CENTER" spacing="10">
-                        <ImageView fx:id="avatarImage" fitHeight="120" fitWidth="120" preserveRatio="true">
+                        <ImageView fx:id="avatarImage" fitHeight="120" fitWidth="120" preserveRatio="true"
+                        onMouseClicked="#onChangeAvatar">
                             <clip>
                                 <Circle centerX="60" centerY="60" radius="60"/>
                             </clip>
