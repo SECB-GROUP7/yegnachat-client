@@ -111,25 +111,25 @@ public class FeedController {
 
     // Likes
             boolean likedByMe = post.has("liked_by_me") && post.get("liked_by_me").getAsBoolean();
-            Button likeButton = new Button(likedByMe ? "Unlike" : "Like");
-            likeButton.setOnAction(e -> {
-                JsonObject likeMsg = new JsonObject();
-                likeMsg.addProperty("type", likedByMe ? "unlike_post" : "like_post");
-                JsonObject payload = new JsonObject();
-                payload.addProperty("post_id", post.get("post_id").getAsLong());
-                likeMsg.add("payload", payload);
-                socket.send(likeMsg);
-
-                likeButton.setText(likedByMe ? "Like" : "Unlike");
-                post.addProperty("liked_by_me", !likedByMe);
-            });
+//            Button likeButton = new Button(likedByMe ? "Unlike" : "Like");
+//            likeButton.setOnAction(e -> {
+//                JsonObject likeMsg = new JsonObject();
+//                likeMsg.addProperty("type", likedByMe ? "unlike_post" : "like_post");
+//                JsonObject payload = new JsonObject();
+//                payload.addProperty("post_id", post.get("post_id").getAsLong());
+//                likeMsg.add("payload", payload);
+//                socket.send(likeMsg);
+//
+//                likeButton.setText(likedByMe ? "Like" : "Unlike");
+//                post.addProperty("liked_by_me", !likedByMe);
+//            });
 
 
             // Comments
             Button commentButton = new Button("View Comments");
             commentButton.setOnAction(e -> openCommentsDialog(post.get("post_id").getAsLong()));
 
-            HBox actions = new HBox(10, likeButton, commentButton);
+            HBox actions = new HBox(10, commentButton);
 
             postCard.getChildren().addAll(avatar, username, content);
 
