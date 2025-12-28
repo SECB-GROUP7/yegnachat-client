@@ -48,6 +48,7 @@ Create a `.env` file in the project root with the following values:
 HOST=localhost
 PORT=9090
 TRANSLATION_URL=https://script.google.com/macros/s/AKfycbwZQ1cbo4VBVxcOnrqufdcXF2wPZgbKyHtyNgRYuwQEkYXcgWotFiQj7mMsKeRyBYOVVg/exec
+UPLOAD_URL=http://localhost:8080
 ```
 
 > **Note:**  
