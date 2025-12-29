@@ -1,7 +1,12 @@
 .root {
     -fx-background-color: #0f172a;
+    -fx-font-family: "Noto Sans Ethiopic";
 }
 
+@font-face {
+    font-family: "Noto Sans Ethiopic";
+    src: url("/fonts/NotoSansEthiopicVariable.ttf");
+}
 VBox {
     -fx-background-color: #020617;
 }

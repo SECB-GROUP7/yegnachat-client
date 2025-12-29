@@ -6,6 +6,8 @@ import com.yegnachat.session.Session;
 import com.yegnachat.util.TokenStorage;
 import io.github.cdimascio.dotenv.Dotenv;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -72,7 +74,12 @@ public class LoginController {
         // Try loading Session
         loadSession();
 
-        loginButton.setOnAction(e -> login());
+        loginButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(javafx.event.ActionEvent event) {
+                login();
+            }
+        });
         goToSignup.setOnAction(e -> switchTo("signup.fxml"));
     }
 
